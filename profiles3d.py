@@ -38,7 +38,7 @@ class Void:
         self.tr.sort(key = lambda x: x.d)
         self.is_sorted = True
 
-    def radial_density_profile(self, cat, RMAX:float, RMIN:float, dr:float) -> None:
+    def radial_density_profile(self, cat, RMIN:float, RMAX:float, dr:float) -> None:
 
         # MeanDenTrac = 1 => Delta + 1 == Density
         MeanDenTrac = 1. # Numero de trazadores en el catalogo / volumen total del catalogo
