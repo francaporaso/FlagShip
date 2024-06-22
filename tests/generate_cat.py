@@ -2,7 +2,7 @@ import numpy as np
 from astropy.io import fits
 
 #x,y,z,m
-lencat = 100
+lencat = 100_000
 l = 1000. #box size
 lm_min = 9.
 lm_max = 15.
@@ -29,4 +29,4 @@ t = fits.BinTableHDU.from_columns(fits.ColDefs(tabla))
 hdu = fits.PrimaryHDU(header=header)
 hdul = fits.HDUList([hdu, t])
 
-hdul.writeto('testcat.fits', overwrite=True)
+hdul.writeto('tests/testcat.fits', overwrite=True)
