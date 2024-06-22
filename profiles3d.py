@@ -20,12 +20,8 @@ class Void:
         self.zc = zc
         self.rv = rv
         self.tr = [] #tracers
+        self.is_sorted = False
 
-    def comoving_to_celestial(self):
-        # delta = 
-        # alpha =
-        # redshift = astropy tiene una formula...
-        pass
 
     def get_tracers(self, cat, RMAX=5.):
         square_distance = (cat.xhalo - self.xc)**2 +  (cat.yhalo - self.yc)**2 + (cat.zhalo - self.zc)**2
@@ -37,18 +33,36 @@ class Void:
             self.tr.append(Tracer(cat.xhalo[i], cat.yhalo[i], cat.zhalo[i], cat.lmhalo[i]))
 
     def sort_tracers(self):
+        for i in range(len(self.tr)):
+            self.tr[i].distanceto(self.xc, self.yc, self.zc)
         self.tr.sort(key = lambda x: x.d)
+        self.is_sorted = True
 
-    def radial_density_profile(self, rmin, rmax, dr=0.5):
+    def radial_density_profile(self, cat, RMAX:float, RMIN:float, dr:float) -> None:
 
-        # dr en Mpc, distancia entre cascarones
+        # MeanDenTrac = 1 => Delta + 1 == Density
+        MeanDenTrac = 1. # Numero de trazadores en el catalogo / volumen total del catalogo
+        NBINS = int(round(((RMAX-RMIN)/dr),0))
 
-        # MeanNumTrac = 1 => Delta == Density
-        MeanNumTrac = 1.
+        RMIN *= self.rv
+        RMAX *= self.rv
+        dr   *= self.rv
 
-        shells = [] # acá defino todas las cascaras que se van a dividir
-        for shell in shells:
-            
-            mass = 1 # masa del cascaron
-            volume = 1 # volumen del cascaron
-            Delta = (mass/volume)/MeanNumTrac - 1.
+        Delta = np.zeros(NBINS)
+        radius = RMIN
+        i = 0
+
+        self.get_tracers(cat=cat, RMAX=RMAX)
+        self.sort_tracers()
+
+        for n in range(NBINS):
+            mass = 0.
+            while (self.tr[i].d >= radius and self.tr[i].d < radius + dr):
+                mass += 10.0**(self.tr[i].lm)
+                i+=1
+
+            volume = (4*np.pi/3)*((radius+dr)**3 - radius**3) # volumen del cascaron
+            Delta[n] = (mass/volume)/MeanDenTrac - 1. 
+            radius += dr
+
+        return Delta
