@@ -58,4 +58,4 @@ def normal_cat(lencat=100_000, sigma=0., mu=300, lm_min=9., lm_max=15.):
 
 
 if __name__ == '__main__':
-    normal_cat()
+    uniform_cat()
