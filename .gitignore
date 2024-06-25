@@ -1,5 +1,6 @@
 # ignora cat de prueba
 *.fits
+*.txt
 
 # ignora run local
 __pycache__

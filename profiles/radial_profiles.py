@@ -1,5 +1,5 @@
 import numpy as np
-import astropy.io as fits
+from astropy.io import fits
 
 from tools.void import Void, Tracer
 from tools.save_file import save_file
@@ -56,19 +56,19 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-sample', action='store', dest='sample',default='pru')
-    parser.add_argument('-tcat', action='store', dest='sample',default='pru')
-    parser.add_argument('-lcat', action='store', dest='sample',default='pru')
-    parser.add_argument('-RMIN', action='store', dest='sample',default=0.01)
-    parser.add_argument('-RMAX', action='store', dest='sample',default=5.0)
-    parser.add_argument('-dr', action='store', dest='sample',default=0.25)
-    parser.add_argument('-Rv_min', action='store', dest='sample',default=0.25)
-    parser.add_argument('-Rv_max', action='store', dest='sample',default=0.25)
-    parser.add_argument('-z_min', action='store', dest='sample',default=0.25)
-    parser.add_argument('-z_max', action='store', dest='sample',default=0.25)
-    parser.add_argument('-rho1_min', action='store', dest='sample',default=0.25)
-    parser.add_argument('-rho1_max', action='store', dest='sample',default=0.25)
-    parser.add_argument('-rho2_min', action='store', dest='sample',default=0.25)
-    parser.add_argument('-rho2_max', action='store', dest='sample',default=0.25)
+    parser.add_argument('-tcat', action='store', dest='tcat',default='pru')
+    parser.add_argument('-lcat', action='store', dest='lcat',default='pru')
+    parser.add_argument('-RMIN', action='store', dest='RMIN',default=0.01)
+    parser.add_argument('-RMAX', action='store', dest='RMAX',default=5.0)
+    parser.add_argument('-dr', action='store', dest='dr',default=0.25)
+    parser.add_argument('-Rv_min', action='store', dest='Rv_min',default=6.)
+    parser.add_argument('-Rv_max', action='store', dest='Rv_max',default=30.)
+    parser.add_argument('-z_min', action='store', dest='z_min',default=0.1)
+    parser.add_argument('-z_max', action='store', dest='z_max',default=0.4)
+    parser.add_argument('-rho1_min', action='store', dest='rho1_min',default=-1.)
+    parser.add_argument('-rho1_max', action='store', dest='rho1_max',default=1.)
+    parser.add_argument('-rho2_min', action='store', dest='rho2_min',default=-1.)
+    parser.add_argument('-rho2_max', action='store', dest='rho2_max',default=100.)
 
     args = parser.parse_args()
     sample = args.sample
