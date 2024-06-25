@@ -1,20 +1,20 @@
 import numpy as np
 
 class Tracer:
-    def __init__(self,x,y,z,lm):
+    def __init__(self, x:float, y:float ,z:float , lm:float):
         self.x = x
         self.y = y
         self.z = z
         self.lm = lm
         self.d = None # dist to a center (xc,yc,zc)
 
-    def distanceto(self, xc, yc , zc):
+    def distanceto(self, xc:float, yc:float , zc:float):
         d2 = (self.x - xc)**2 + (self.y - yc)**2 + (self.z - zc)**2
         self.d = np.sqrt(d2)
 
 
 class Void:
-    def __init__(self,xc,yc,zc,rv):
+    def __init__(self, xc:float, yc:float, zc:float, rv:float):
         self.xc = xc
         self.yc = yc
         self.zc = zc
@@ -23,18 +23,18 @@ class Void:
         self.is_sorted = False
 
 
-    def get_tracers(self, cat, RMAX=5.):
-        square_distance = (cat.xhalo - self.xc)**2 +  (cat.yhalo - self.yc)**2 + (cat.zhalo - self.zc)**2
-        mask = square_distance<=(RMAX*self.rv)**2
+    def get_tracers(self, cat, RMAX:float):
+        distance = np.sqrt( (cat.xhalo - self.xc)**2 +  (cat.yhalo - self.yc)**2 + (cat.zhalo - self.zc)**2 )
+        mask = distance<=(RMAX*self.rv)
 
         cat = cat[mask] # ver si esto no es el problema! (idem a perfiles3d.py de codes_tesis/)
 
         for i in range(len(cat)):
-            self.tr.append(Tracer(cat.xhalo[i], cat.yhalo[i], cat.zhalo[i], cat.lmhalo[i]))
+            t = Tracer(cat.xhalo[i], cat.yhalo[i], cat.zhalo[i], cat.lmhalo[i])
+            t.d = distance
+            self.tr.append(t)
 
     def sort_tracers(self):
-        for i in range(len(self.tr)):
-            self.tr[i].distanceto(self.xc, self.yc, self.zc)
         self.tr.sort(key = lambda x: x.d)
         self.is_sorted = True
 
