@@ -4,3 +4,6 @@
 
 # ignora run local
 __pycache__
+
+# ignora resultados
+results/
