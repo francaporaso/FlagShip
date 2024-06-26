@@ -71,14 +71,9 @@ class Void:
 
         for n in range(NBINS):
             mass = 0.
-            try:
-                while (self.tr[i].d >= radius) and (self.tr[i].d < radius + dr):
-                    mass += 10.0**(self.tr[i].lm)
-                    i+=1
-            except:
-                ## error in last index, but only when using method3
-                print('error in index')
-                print(i)
+            while (self.tr[i].d >= radius) and (self.tr[i].d < radius + dr):
+                mass += 10.0**(self.tr[i].lm)
+                i+=1
 
             volume = (4*np.pi/3)*((radius+dr)**3 - radius**3) # volumen del cascaron
             Delta[n] = (mass/volume)/MeanDenTrac - 1. 
