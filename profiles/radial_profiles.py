@@ -2,7 +2,7 @@ import numpy as np
 from astropy.io import fits
 import time
 
-from tools.void import Void, StackedVoid, Tracer
+from tools.void import Void, Tracer
 from tools.save_file import save_file
 
 # leer cat de Voids -> convertirlos en Void() -> leer cat de trazadores -> calcular perfiles -> apilarlos
@@ -28,9 +28,15 @@ def lens_cat(folder, lcat,
 def method1(tcat,
             xv,yv,zv,rv,
             RMIN,RMAX,dr):
-    '''making void objects all at once and storing in voids_list'''
+    '''
+    making void objects all at once and storing in voids_list
+    very similar to method2
+    '''
 
     voids_list = list(map(Void, xv,yv,zv,rv))
+    tot_tracers = np.sum([len(v.tr) for v in voids_list])
+    print(f'N tracers: {tot_tracers}')
+    
     delta_list = np.array([v.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr) for v in voids_list])
 
     stacked_profile = np.mean(delta_list, axis=0)
@@ -39,23 +45,37 @@ def method1(tcat,
 def method2(tcat,
             xv,yv,zv,rv,
             RMIN,RMAX,dr):
-    '''making void objects one by one and overwriting v'''
+    '''
+    making void objects one by one and overwriting v
+    SLOWEST METHOD
+    '''
 
     NBINS = int(round(((RMAX-RMIN)/dr),0))
     nvoids = len(xv)
 
     stacked_profile = np.zeros(NBINS)
+    tot_tracers = 0
+    
     for i in range(nvoids):
         v = Void(xv[i], yv[i], zv[i], rv[i])
+        tot_tracers += len(v.tr)
         stacked_profile += v.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
-    stacked_profile /= nvoids
 
+    print(f'N tracers: {tot_tracers}')
+
+    stacked_profile /= nvoids
     return stacked_profile
     
 def method3(tcat,
             xv,yv,zv,rv,
             RMIN,RMAX,dr):
-    '''creating a void object with all tracers from the individual voids'''
+    '''
+    creating a void object with all tracers from the individual voids
+    FASTEST METHOD (by far)
+    '''
+
+    ### CHEQUEAR UNIDADES! Probablemente no se esté normalizando por el numero de voids. El volumen
+    ### se está calculando sin unidades!! 
     nvoids = len(xv)
 
     tr_list = []
@@ -63,13 +83,14 @@ def method3(tcat,
     for i in range(nvoids):
         v = Void(xv[i], yv[i], zv[i], rv[i])
         v.get_tracers(cat=tcat, RMAX=RMAX, center=True)
-        tr_list.append(v.tr)
-    ## as tr_list is a list of lists, we flatten
-    tr_flat = [x for xs in tr_list for x in xs] 
+        tr_list += v.tr
 
-    stacked_void = StackedVoid(tr_flat)
-    stacked_profile = stacked_void.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
+    print(f'N tracers: {len(tr_list)}')
 
+    stacked_void = Void(0.,0.,0.,1.)
+    stacked_void.tr = tr_list  
+
+    stacked_profile = stacked_void.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
     return stacked_profile
 
 def main(tfolder, tcat,
@@ -86,17 +107,15 @@ def main(tfolder, tcat,
     xv, yv, zv, rv = L[5], L[6], L[7], L[1]
     print(f'Nvoids: {len(L[1])}')
 
-    # print('Running method1...')
-    # t_in = time.time()
-    # stacked_profile_1 = method1(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
-    stacked_profile_1 = 0
-    # print(f'Ended in {time.time()-t_in} s')
+    print('Running method1...')
+    t_in = time.time()
+    stacked_profile_1 = method1(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    print(f'Ended in {time.time()-t_in} s')
 
-    # t_in = time.time()
-    # print('Running method2...')
-    # stacked_profile_2 = method2(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
-    stacked_profile_2 = 0
-    # print(f'Ended in {time.time()-t_in} s')
+    t_in = time.time()
+    print('Running method2...')
+    stacked_profile_2 = method2(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    print(f'Ended in {time.time()-t_in} s')
     
     t_in = time.time()
     print('Running method3...')
