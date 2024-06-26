@@ -39,8 +39,10 @@ class Void:
             xhalo /= self.rv 
             yhalo /= self.rv 
             zhalo /= self.rv 
+            ## ver notas:
+            lmhalo = cat.lmhalo - 3*np.log10(self.rv)
             for i in range(len(cat)):
-                t = Tracer(xhalo[i], yhalo[i], zhalo[i], cat.lmhalo[i])
+                t = Tracer(xhalo[i], yhalo[i], zhalo[i], lmhalo[i])
                 t.distanceto(0,0,0)
                 self.tr.append(t)
         
@@ -71,7 +73,7 @@ class Void:
 
         for n in range(NBINS):
             mass = 0.
-            while (self.tr[i].d >= radius) and (self.tr[i].d < radius + dr):
+            while (i<len(self.tr)) and (self.tr[i].d >= radius) and (self.tr[i].d < radius + dr):
                 mass += 10.0**(self.tr[i].lm)
                 i+=1
 
