@@ -75,25 +75,33 @@ def main(tfolder, tcat,
          Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG,
          sample):
 
+    print('Loading catalogs...')
     tcat = fits.open(tfolder+tcat)[1].data # catalog of tracers
-
     L = lens_cat(lfolder, lcat, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
     
+    print(f'Nvoids: {len(L.T)}')
     xv, yv, zv, rv = L[5], L[6], L[7], L[1]
 
+    print('Running method1...')
     stacked_profile_1 = method1(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    print('Running method2...')
     stacked_profile_2 = method2(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    print('Running method3...')
     stacked_profile_3 = method3(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
 
     #save file
     folder = f'profiles/radial/'
     filename = f'sp-{sample}_r{int(Rv_min)}-{int(Rv_max)}-z0{int(z_min*10)}_{int(z_max*10)}.fits'
+    print(f'Saving file in {folder+filename}')
     save_file([stacked_profile_1, stacked_profile_2, stacked_profile_3], folder, filename)
+
+    return True
 
 if __name__ == '__main__':
 
     import argparse
+    import time
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-sample', action='store', dest='sample',default='pru')
@@ -132,8 +140,12 @@ if __name__ == '__main__':
 
     FLAG = 2
 
-    main(tfolder, tcat,
-         RMIN, RMAX, dr,
-         lfolder, lcat, 
-         Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG,
-         sample)
+    tini = time.time()
+    S = main(tfolder, tcat,
+             RMIN, RMAX, dr,
+             lfolder, lcat, 
+             Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG,
+             sample)
+    tfin = time.time()
+    if S:
+        print(f'Job finished succesfully in {tfin-tini} s!')
