@@ -1,5 +1,6 @@
 import numpy as np
 from astropy.io import fits
+import time
 
 from tools.void import Void, StackedVoid, Tracer
 from tools.save_file import save_file
@@ -22,7 +23,7 @@ def lens_cat(folder, lcat,
 
     L = L[:,mask]
 
-    return L.T
+    return L
 
 def method1(tcat,
             xv,yv,zv,rv,
@@ -40,7 +41,7 @@ def method2(tcat,
             RMIN,RMAX,dr):
     '''making void objects one by one and overwriting v'''
 
-    NBINS = int((RMAX-RMIN)/dr)
+    NBINS = int(round(((RMAX-RMIN)/dr),0))
     nvoids = len(xv)
 
     stacked_profile = np.zeros(NBINS)
@@ -57,14 +58,16 @@ def method3(tcat,
     '''creating a void object with all tracers from the individual voids'''
     nvoids = len(xv)
 
-    tr_list = np.array([])
+    tr_list = []
 
     for i in range(nvoids):
         v = Void(xv[i], yv[i], zv[i], rv[i])
         v.get_tracers(cat=tcat, RMAX=RMAX, center=True)
-        tr_list = np.append(tr_list, v.tr)
+        tr_list.append(v.tr)
+    ## as tr_list is a list of lists, we flatten
+    tr_flat = [x for xs in tr_list for x in xs] 
 
-    stacked_void = StackedVoid(tr_list)
+    stacked_void = StackedVoid(tr_flat)
     stacked_profile = stacked_void.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
 
     return stacked_profile
@@ -79,16 +82,26 @@ def main(tfolder, tcat,
     tcat = fits.open(tfolder+tcat)[1].data # catalog of tracers
     L = lens_cat(lfolder, lcat, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
-    
-    print(f'Nvoids: {len(L.T)}')
-    xv, yv, zv, rv = L[5], L[6], L[7], L[1]
 
-    print('Running method1...')
-    stacked_profile_1 = method1(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
-    print('Running method2...')
-    stacked_profile_2 = method2(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    xv, yv, zv, rv = L[5], L[6], L[7], L[1]
+    print(f'Nvoids: {len(L[1])}')
+
+    # print('Running method1...')
+    # t_in = time.time()
+    # stacked_profile_1 = method1(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    stacked_profile_1 = 0
+    # print(f'Ended in {time.time()-t_in} s')
+
+    # t_in = time.time()
+    # print('Running method2...')
+    # stacked_profile_2 = method2(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    stacked_profile_2 = 0
+    # print(f'Ended in {time.time()-t_in} s')
+    
+    t_in = time.time()
     print('Running method3...')
     stacked_profile_3 = method3(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    print(f'Ended in {time.time()-t_in} s')
 
     #save file
     folder = f'profiles/radial/'
@@ -101,7 +114,6 @@ def main(tfolder, tcat,
 if __name__ == '__main__':
 
     import argparse
-    import time
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-sample', action='store', dest='sample',default='pru')
