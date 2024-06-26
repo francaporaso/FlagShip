@@ -32,7 +32,7 @@ def method1(tcat,
     '''
     making void objects all at once and storing in voids_list
     very similar to method2
-    fastens when calling get_tracers here
+    speeds up when calling get_tracers here
     '''
 
     voids_list = list(map(Void, xv,yv,zv,rv))
@@ -54,7 +54,7 @@ def method2(tcat,
     '''
     making void objects one by one and overwriting v
     SLOWEST METHOD
-    fastens when calling get_tracers here
+    speeds up when calling get_tracers here
     '''
 
     NBINS = int(round(((RMAX-RMIN)/dr),0))
