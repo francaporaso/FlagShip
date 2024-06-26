@@ -82,7 +82,7 @@ def method3(tcat,
 
     for i in range(nvoids):
         v = Void(xv[i], yv[i], zv[i], rv[i])
-        v.get_tracers(cat=tcat, RMAX=RMAX, center=True)
+        v.get_tracers(cat=tcat, RMAX=RMAX+dr, center=True)
         tr_list += v.tr
 
     print(f'N tracers: {len(tr_list)}')
@@ -107,18 +107,18 @@ def main(tfolder, tcat,
     xv, yv, zv, rv = L[5], L[6], L[7], L[1]
     print(f'Nvoids: {len(L[1])}')
 
-    print('Running method1...')
-    t_in = time.time()
-    stacked_profile_1 = method1(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
-    print(f'Ended in {time.time()-t_in} s')
+    # print('Running method1...')
+    # t_in = time.time()
+    # stacked_profile_1 = method1(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    # print(f'Ended in {time.time()-t_in} s')
 
-    t_in = time.time()
-    print('Running method2...')
-    stacked_profile_2 = method2(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
-    print(f'Ended in {time.time()-t_in} s')
+    # t_in = time.time()
+    # print('Running method2...')
+    # stacked_profile_2 = method2(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    # print(f'Ended in {time.time()-t_in} s')
     
     t_in = time.time()
-    print('Running method3...')
+    print('Running stacking...')
     stacked_profile_3 = method3(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
     print(f'Ended in {time.time()-t_in} s')
 
@@ -126,7 +126,7 @@ def main(tfolder, tcat,
     folder = f'profiles/radial/'
     filename = f'sp-{sample}_r{int(Rv_min)}-{int(Rv_max)}-z0{int(z_min*10)}_{int(z_max*10)}.fits'
     print(f'Saving file in {folder+filename}')
-    save_file([stacked_profile_1, stacked_profile_2, stacked_profile_3], folder, filename)
+    save_file(stacked_profile_3, folder, filename)
 
     return True
 
