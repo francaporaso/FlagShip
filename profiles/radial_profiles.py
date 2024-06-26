@@ -1,7 +1,7 @@
 import numpy as np
 from astropy.io import fits
 
-from tools.void import Void, Tracer
+from tools.void import Void, StackedVoid, Tracer
 from tools.save_file import save_file
 
 # leer cat de Voids -> convertirlos en Void() -> leer cat de trazadores -> calcular perfiles -> apilarlos
@@ -22,10 +22,52 @@ def lens_cat(folder, lcat,
 
     L = L[:,mask]
 
-    nvoids = len(L.T)
-    # print(f'Nvoids = {Nvoids}')
+    return L.T
 
-    return nvoids, L
+def method1(tcat,
+            xv,yv,zv,rv,
+            RMIN,RMAX,dr):
+    '''making void objects all at once and storing in voids_list'''
+
+    voids_list = list(map(Void, xv,yv,zv,rv))
+    delta_list = np.array([v.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr) for v in voids_list])
+
+    stacked_profile = np.mean(delta_list, axis=0)
+    return stacked_profile
+
+def method2(tcat,
+            xv,yv,zv,rv,
+            RMIN,RMAX,dr):
+    '''making void objects one by one and overwriting v'''
+
+    NBINS = int((RMAX-RMIN)/dr)
+    nvoids = len(xv)
+
+    stacked_profile = np.zeros(NBINS)
+    for i in range(nvoids):
+        v = Void(xv[i], yv[i], zv[i], rv[i])
+        stacked_profile += v.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
+    stacked_profile /= nvoids
+
+    return stacked_profile
+    
+def method3(tcat,
+            xv,yv,zv,rv,
+            RMIN,RMAX,dr):
+    '''creating a void object with all tracers from the individual voids'''
+    nvoids = len(xv)
+
+    tr_list = np.array([])
+
+    for i in range(nvoids):
+        v = Void(xv[i], yv[i], zv[i], rv[i])
+        v.get_tracers(cat=tcat, RMAX=RMAX, center=True)
+        tr_list = np.append(tr_list, v.tr)
+
+    stacked_void = StackedVoid(tr_list)
+    stacked_profile = stacked_void.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
+
+    return stacked_profile
 
 def main(tfolder, tcat,
          RMIN, RMAX, dr,
@@ -35,20 +77,19 @@ def main(tfolder, tcat,
 
     tcat = fits.open(tfolder+tcat)[1].data # catalog of tracers
 
-    nvoids, L = lens_cat(lfolder, lcat, 
+    L = lens_cat(lfolder, lcat, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
     
     xv, yv, zv, rv = L[5], L[6], L[7], L[1]
 
-    voids_list = list(map(Void, xv,yv,zv,rv))
-    delta_list = np.array([v.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr) for v in voids_list])
-
-    stacked_profile = np.mean(delta_list, axis=0)
+    stacked_profile_1 = method1(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    stacked_profile_2 = method2(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    stacked_profile_3 = method3(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
 
     #save file
     folder = f'profiles/radial/'
     filename = f'sp-{sample}_r{int(Rv_min)}-{int(Rv_max)}-z0{int(z_min*10)}_{int(z_max*10)}.fits'
-    save_file(stacked_profile, folder, filename)
+    save_file([stacked_profile_1, stacked_profile_2, stacked_profile_3], folder, filename)
 
 if __name__ == '__main__':
 
