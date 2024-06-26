@@ -63,45 +63,22 @@ class Void:
         radius = RMIN
         i = 0
 
-        if not self.is_sorted or self.tr == []:
+        if self.tr == []:
             self.get_tracers(cat=cat, RMAX=RMAX)
-            self.sort_tracers()
-
-        for n in range(NBINS):
-            mass = 0.
-            while (self.tr[i].d >= radius and self.tr[i].d < radius + dr):
-                mass += 10.0**(self.tr[i].lm)
-                i+=1
-
-            volume = (4*np.pi/3)*((radius+dr)**3 - radius**3) # volumen del cascaron
-            Delta[n] = (mass/volume)/MeanDenTrac - 1. 
-            radius += dr
-
-        return Delta
-    
-class StackedVoid(Void):
-    def __init__(self, tracers):
-        self.tr = tracers
-        self.is_sorted = False
-
-    def radial_density_profile(self, RMIN:float, RMAX:float, dr:float):
-
-        # MeanDenTrac = 1 => Delta + 1 == Density
-        MeanDenTrac = 1. # Numero de trazadores en el catalogo / volumen total del catalogo
-        NBINS = int(round(((RMAX-RMIN)/dr),0))
-
-        Delta = np.zeros(NBINS)
-        radius = RMIN
-        i = 0
 
         if not self.is_sorted:
             self.sort_tracers()
 
         for n in range(NBINS):
             mass = 0.
-            while (self.tr[i].d >= radius and self.tr[i].d < radius + dr):
-                mass += 10.0**(self.tr[i].lm)
-                i+=1
+            try:
+                while (self.tr[i].d >= radius) and (self.tr[i].d < radius + dr):
+                    mass += 10.0**(self.tr[i].lm)
+                    i+=1
+            except:
+                ## error in last index, but only when using method3
+                print('error in index')
+                print(i)
 
             volume = (4*np.pi/3)*((radius+dr)**3 - radius**3) # volumen del cascaron
             Delta[n] = (mass/volume)/MeanDenTrac - 1. 
