@@ -90,10 +90,6 @@ class StackedVoid(Void):
         MeanDenTrac = 1. # Numero de trazadores en el catalogo / volumen total del catalogo
         NBINS = int(round(((RMAX-RMIN)/dr),0))
 
-        # RMIN *= self.rv
-        # RMAX *= self.rv
-        # dr   *= self.rv
-
         Delta = np.zeros(NBINS)
         radius = RMIN
         i = 0
