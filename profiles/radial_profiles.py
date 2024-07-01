@@ -36,6 +36,9 @@ def main(tfolder, tcat,
 
     print('Loading catalogs...')
     tcat = fits.open(tfolder+tcat)[1].data # catalog of tracers
+    tmask = tcat.flag_central == 0
+    tcat = tcat[tmask]
+
     L = lens_cat(lfolder, lcat, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
 
@@ -47,7 +50,7 @@ def main(tfolder, tcat,
     stacked_profile = method3(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
     print(f'Ended in {time.time()-t_in} s')
 
-    #save file
+    #save files
     nvoids = len(L[1])
 
     try:
@@ -69,7 +72,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-sample', action='store', dest='sample',default='pru')
-    parser.add_argument('-tcat', action='store', dest='tcat',default='pru')
+    parser.add_argument('-tcat', action='store', dest='tcat',default='voids_MICE.dat')
     parser.add_argument('-lcat', action='store', dest='lcat',default='pru')
     parser.add_argument('-RMIN', action='store', dest='RMIN',default=0.01)
     parser.add_argument('-RMAX', action='store', dest='RMAX',default=5.0)
@@ -99,8 +102,8 @@ if __name__ == '__main__':
     rho2_min = float(args.rho2_min)
     rho2_max = float(args.rho2_max) 
 
-    tfolder = '' #folder of the tracers cat
-    lfolder = '' #folder of the lenses cat
+    tfolder = 'mnt/simulations/MICE/' #folder of the tracers cat
+    lfolder = '../../cats/MICE/micecat2_halos_full.fits' #folder of the lenses cat
 
     FLAG = 2
 
