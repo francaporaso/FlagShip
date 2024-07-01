@@ -10,10 +10,10 @@ from tools.save_file import save_file
 from tools.stacking_methods import method3
 
 
-def lens_cat(folder, lcat, 
+def lens_cat(folder, lenses, 
              Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG):
     
-    L = np.loadtxt(folder+lcat).T
+    L = np.loadtxt(folder+lenses).T
 
     Rv    = L[1]
     z     = L[4]
@@ -28,18 +28,18 @@ def lens_cat(folder, lcat,
 
     return L
 
-def main(tfolder, tcat,
+def main(tfolder, tracers,
          RMIN, RMAX, dr,
-         lfolder, lcat, 
+         lfolder, lenses, 
          Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG,
          sample):
 
     print('Loading catalogs...')
-    tcat = fits.open(tfolder+tcat)[1].data # catalog of tracers
-    tmask = tcat.flag_central == 0
-    tcat = tcat[tmask]
+    tracers = fits.open(tfolder+tracers)[1].data # catalog of tracers
+    tmask = tracers.flag_central == 0
+    tracers = tracers[tmask]
 
-    L = lens_cat(lfolder, lcat, 
+    L = lens_cat(lfolder, lenses, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
 
     xv, yv, zv, rv = L[5], L[6], L[7], L[1]
@@ -47,7 +47,7 @@ def main(tfolder, tcat,
     
     t_in = time.time()
     print('Running stacking...')
-    stacked_profile = method3(tcat=tcat,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
+    stacked_profile = method3(tcat=tracers,xv=xv,yv=yv,zv=zv,rv=rv,RMIN=RMIN,RMAX=RMAX,dr=dr)
     print(f'Ended in {time.time()-t_in} s')
 
     #save files
@@ -72,8 +72,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-sample', action='store', dest='sample',default='pru')
-    parser.add_argument('-tcat', action='store', dest='tcat',default='voids_MICE.dat')
-    parser.add_argument('-lcat', action='store', dest='lcat',default='micecat2_halos_full.fits')
+    parser.add_argument('-tracers', action='store', dest='tracers',default='voids_MICE.dat')
+    parser.add_argument('-lenses', action='store', dest='lenses',default='micecat2_halos_full.fits')
     parser.add_argument('-RMIN', action='store', dest='RMIN',default=0.01)
     parser.add_argument('-RMAX', action='store', dest='RMAX',default=5.0)
     parser.add_argument('-dr', action='store', dest='dr',default=0.25)
@@ -88,11 +88,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     sample = args.sample
-    tcat = args.tcat
-    lcat = args.lcat
+    tracers = args.tracers
+    lenses = args.lenses
     RMIN = float(args.RMIN)
     RMAX = float(args.RMAX)
-    dr   = float(args.dr) #space between shells, in units of void radius
+    dr   = float(args.dr) # space between shells, in units of void radius
     Rv_min   = float(args.Rv_min)
     Rv_max   = float(args.Rv_max) 
     z_min    = float(args.z_min) 
@@ -102,20 +102,17 @@ if __name__ == '__main__':
     rho2_min = float(args.rho2_min)
     rho2_max = float(args.rho2_max) 
 
-    tfolder = '/mnt/simulations/MICE/' #folder of the tracers cat
-    lfolder = '../../cats/MICE/' #folder of the lenses cat
+    tfolder = '/mnt/simulations/MICE/' # folder of the tracers cat
+    lfolder = '../../cats/MICE/'       # folder of the lenses cat
 
-    print(lfolder+lcat)
+    FLAG = 2
 
-
-    # FLAG = 2
-
-    # tini = time.time()
-    # S = main(tfolder, tcat,
-    #          RMIN, RMAX, dr,
-    #          lfolder, lcat, 
-    #          Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG,
-    #          sample)
-    # tfin = time.time()
-    # if S:
-    #     print(f'Job finished succesfully in {tfin-tini} s!')
+    tini = time.time()
+    S = main(tfolder, tracers,
+             RMIN, RMAX, dr,
+             lfolder, lenses, 
+             Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG,
+             sample)
+    tfin = time.time()
+    if S:
+        print(f'Job finished succesfully in {tfin-tini} s!')
