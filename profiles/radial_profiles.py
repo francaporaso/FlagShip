@@ -102,7 +102,7 @@ if __name__ == '__main__':
     rho2_min = float(args.rho2_min)
     rho2_max = float(args.rho2_max) 
 
-    tfolder = 'mnt/simulations/MICE/' #folder of the tracers cat
+    tfolder = '/mnt/simulations/MICE/' #folder of the tracers cat
     lfolder = '../../cats/MICE/micecat2_halos_full.fits' #folder of the lenses cat
 
     FLAG = 2
