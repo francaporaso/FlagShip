@@ -72,8 +72,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-sample', action='store', dest='sample',default='pru')
-    parser.add_argument('-tracers', action='store', dest='tracers',default='voids_MICE.dat')
-    parser.add_argument('-lenses', action='store', dest='lenses',default='micecat2_halos_full.fits')
+    parser.add_argument('-lenses', action='store', dest='lenses',default='voids_MICE.dat')
+    parser.add_argument('-tracers', action='store', dest='tracers',default='micecat2_halos_full.fits')
     parser.add_argument('-RMIN', action='store', dest='RMIN',default=0.01)
     parser.add_argument('-RMAX', action='store', dest='RMAX',default=5.0)
     parser.add_argument('-dr', action='store', dest='dr',default=0.25)
@@ -102,8 +102,8 @@ if __name__ == '__main__':
     rho2_min = float(args.rho2_min)
     rho2_max = float(args.rho2_max) 
 
-    tfolder = '/mnt/simulations/MICE/' # folder of the tracers cat
-    lfolder = '../../cats/MICE/'       # folder of the lenses cat
+    lfolder = '/mnt/simulations/MICE/' # folder of the lenses cat
+    tfolder = '../../cats/MICE/'       # folder of the tracers cat
 
     FLAG = 2
 
