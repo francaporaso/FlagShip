@@ -105,14 +105,17 @@ if __name__ == '__main__':
     tfolder = '/mnt/simulations/MICE/' #folder of the tracers cat
     lfolder = '../../cats/MICE/' #folder of the lenses cat
 
-    FLAG = 2
+    print(lfolder+lcat)
 
-    tini = time.time()
-    S = main(tfolder, tcat,
-             RMIN, RMAX, dr,
-             lfolder, lcat, 
-             Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG,
-             sample)
-    tfin = time.time()
-    if S:
-        print(f'Job finished succesfully in {tfin-tini} s!')
+
+    # FLAG = 2
+
+    # tini = time.time()
+    # S = main(tfolder, tcat,
+    #          RMIN, RMAX, dr,
+    #          lfolder, lcat, 
+    #          Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG,
+    #          sample)
+    # tfin = time.time()
+    # if S:
+    #     print(f'Job finished succesfully in {tfin-tini} s!')
