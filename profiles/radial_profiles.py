@@ -7,7 +7,7 @@ import os
 
 from tools.void import Void, Tracer
 from tools.save_file import save_file
-from tools.stacking_methods import parallel3
+from tools.stacking_methods import parallel3, method3
 
 
 def lens_cat(folder, lenses, 
@@ -48,8 +48,13 @@ def main(tfolder, tracers, lfolder, lenses, sample,
     t_in = time.time()
 
     print('Running stacking...')
-    stacked_profile = parallel3(ncores=ncores, L=L, RMIN=RMIN, RMAX=RMAX, dr=dr)
-    print(f'Ended in {time.time()-t_in} s')
+    
+    if ncores==1:
+        stacked_profile = method3(xv=L[5], yv=L[6], zv=L[7], rv=L[1], RMIN=RMIN, RMAX=RMAX, dr=dr)
+        print(f'Ended in {time.time()-t_in} s')
+    else:
+        stacked_profile = parallel3(ncores=ncores, L=L, RMIN=RMIN, RMAX=RMAX, dr=dr)
+        print(f'Ended in {time.time()-t_in} s')
 
     #save files
     nvoids = len(L[1])

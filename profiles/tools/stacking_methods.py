@@ -56,8 +56,8 @@ def method2(tcat,
     stacked_profile /= nvoids
     return stacked_profile
     
-def method3(xv,yv,zv,rv,
-            RMIN,RMAX,dr):
+def method3(xv:list[float], yv:list[float], zv:list[float], rv:list[float],
+            RMIN:float, RMAX:float, dr:float):
     '''
     creating a void object with all tracers from the individual voids
     FASTEST METHOD (twice as met1 and 2)
@@ -65,28 +65,26 @@ def method3(xv,yv,zv,rv,
 
     Nvoids = len(xv)
 
-    # tr_list = []
-    tr_list = np.array([])
+    tr_list = []
 
     for i in range(Nvoids):
         v = Void(xv[i], yv[i], zv[i], rv[i])
         v.get_tracers(RMAX=RMAX+dr/10, center=True)
-        # tr_list += v.tr
-        tr_list = np.append(tr_list, v.tr)
+        tr_list += v.tr
 
-    return tr_list
+    # return tr_list
 
     ### usar cuando no hay paralelizado
 
-    # print(f'N tracers: {len(tr_list)}')
+    print(f'N tracers: {len(tr_list)}')
 
-    # stacked_void = Void(0.,0.,0.,1.)
-    # stacked_void.tr = tr_list  
-    # stacked_void.sort_tracers()
+    stacked_void = Void(0.,0.,0.,1.)
+    stacked_void.tr = tr_list  
+    stacked_void.sort_tracers()
 
-    # stacked_profile = stacked_void.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
+    stacked_profile = stacked_void.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
 
-    # return stacked_profile/Nvoids
+    return stacked_profile/Nvoids
 
 def method3_singlevoid(xv,yv,zv,rv,
                        RMIN,RMAX,dr):
@@ -102,9 +100,9 @@ def method3_singlevoid(xv,yv,zv,rv,
 def method3_unpack(args):
     return method3_singlevoid(*args)
 
-def parallel3(ncores,
-              L,
-              RMIN,RMAX,dr):
+def parallel3(ncores:int,
+              L:list[float],
+              RMIN:float, RMAX:float, dr:float):
 
     #split voids cat
     Nvoids = len(L[1])
