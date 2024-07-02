@@ -116,6 +116,8 @@ def parallel3(ncores,
     slices = slices[(slices < Nvoids)]
     Lsplit = np.split(L.T,slices)
 
+    del L
+
     #for split
 
     LARGO = len(Lsplit)
