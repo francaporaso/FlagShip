@@ -14,6 +14,9 @@ class Tracer:
 
 
 class Void:
+
+    cat = 0 ## catalogo de tracers, compartido entre todas las instancias de Void
+
     def __init__(self, xc:float, yc:float, zc:float, rv:float):
         self.xc = xc
         self.yc = yc
@@ -23,25 +26,25 @@ class Void:
         self.is_sorted = False
 
 
-    def get_tracers(self, cat, RMAX:float, center:bool = False):
-        distance = (cat.xhalo - self.xc)**2 +  (cat.yhalo - self.yc)**2 + (cat.zhalo - self.zc)**2
+    def get_tracers(self, RMAX:float, center:bool = False):
+        distance = (Void.cat.xhalo - self.xc)**2 +  (Void.cat.yhalo - self.yc)**2 + (Void.cat.zhalo - self.zc)**2
         mask = distance<=(RMAX*self.rv)**2
 
-        cat = cat[mask]
+        localcat = Void.cat[mask]
 
         if not center:
-            for i in range(len(cat)):
-                t = Tracer(cat.xhalo[i], cat.yhalo[i], cat.zhalo[i], cat.lmhalo[i])
+            for i in range(len(localcat)):
+                t = Tracer(localcat.xhalo[i], localcat.yhalo[i], localcat.zhalo[i], localcat.lmhalo[i])
                 t.distanceto(self.xc, self.yc, self.zc)
                 self.tr.append(t)
         else:
-            xhalo, yhalo, zhalo = cat.xhalo - self.xc, cat.yhalo - self.yc, cat.zhalo - self.zc
+            xhalo, yhalo, zhalo = localcat.xhalo - self.xc, localcat.yhalo - self.yc, localcat.zhalo - self.zc
             xhalo /= self.rv 
             yhalo /= self.rv 
             zhalo /= self.rv 
             ## ver notas:
-            lmhalo = cat.lmhalo - 3*np.log10(self.rv)
-            for i in range(len(cat)):
+            lmhalo = localcat.lmhalo - 3*np.log10(self.rv)
+            for i in range(len(localcat)):
                 t = Tracer(xhalo[i], yhalo[i], zhalo[i], lmhalo[i])
                 t.distanceto(0,0,0)
                 self.tr.append(t)
@@ -51,7 +54,7 @@ class Void:
         self.tr.sort(key = lambda x: x.d)
         self.is_sorted = True
 
-    def radial_density_profile(self, cat, RMIN:float, RMAX:float, dr:float):
+    def radial_density_profile(self, RMIN:float, RMAX:float, dr:float):
 
         # MeanDenTrac = 1 => Delta + 1 == Density
         MeanDenTrac = 1. # Numero de trazadores en el catalogo / volumen total del catalogo
@@ -66,7 +69,7 @@ class Void:
         i = 0
 
         if self.tr == []:
-            self.get_tracers(cat=cat, RMAX=RMAX)
+            self.get_tracers(RMAX=RMAX)
 
         if not self.is_sorted:
             self.sort_tracers()
