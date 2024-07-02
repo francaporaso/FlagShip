@@ -2,6 +2,8 @@
 from astropy.io import fits
 import numpy as np
 
+### pasar 2 dicts, for loop para header.append((key1, value1)) y for loop para generar table con dict2 
+
 def save_file(folder, filename,
               stacked_profile, nvoids, RMIN, RMAX, dr,
               Rv_min, Rv_max, z_min, z_max):
