@@ -42,7 +42,6 @@ def main(tfolder, tracers, lfolder, lenses, sample,
     L = lens_cat(lfolder, lenses, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
 
-    xv, yv, zv, rv = L[5], L[6], L[7], L[1]
     print(f'Nvoids: {len(L[1])}')
     
     t_in = time.time()
