@@ -36,7 +36,8 @@ def main(tfolder, tracers, lfolder, lenses, sample,
     print('Loading catalogs...')
     tracers = fits.open(tfolder+tracers)[1].data # catalog of tracers
     tmask = tracers.flag_central == 0
-    tracers = tracers[tmask]
+    ## setting the tcat to all voids instances
+    Void.cat = tracers[tmask]
 
     L = lens_cat(lfolder, lenses, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
@@ -47,7 +48,7 @@ def main(tfolder, tracers, lfolder, lenses, sample,
     t_in = time.time()
 
     print('Running stacking...')
-    stacked_profile = parallel3(ncores=ncores, tcat=tracers, L=L, RMIN=RMIN, RMAX=RMAX, dr=dr)
+    stacked_profile = parallel3(ncores=ncores, L=L, RMIN=RMIN, RMAX=RMAX, dr=dr)
     print(f'Ended in {time.time()-t_in} s')
 
     #save files
@@ -107,8 +108,10 @@ if __name__ == '__main__':
 
     ncores = int(args.ncores)
 
-    lfolder = '/mnt/simulations/MICE/' # folder of the lenses cat
-    tfolder = '../../cats/MICE/'       # folder of the tracers cat
+    # lfolder = '/mnt/simulations/MICE/' # folder of the lenses cat
+    # tfolder = '../../cats/MICE/'       # folder of the tracers cat
+    lfolder = '../tests/' # folder of the lenses cat
+    tfolder = '../tests/'      # folder of the tracers cat
 
     FLAG = 2
 
