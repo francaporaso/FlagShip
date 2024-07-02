@@ -8,6 +8,7 @@ def uniform_cat(lencat=100_000, l=1000., lm_min=9., lm_max=15.):
     yhalo = np.random.uniform(-l,l,lencat)
     zhalo = np.random.uniform(-l,l,lencat)
     lmhalo = np.random.uniform(lm_min,lm_max,lencat)
+    flag_central = np.zeros(lencat)
 
     header = fits.Header()
     header.append( ('lencat', lencat) )
@@ -20,7 +21,8 @@ def uniform_cat(lencat=100_000, l=1000., lm_min=9., lm_max=15.):
         fits.Column(name='yhalo', format='E', array=yhalo),
         fits.Column(name='zhalo', format='E', array=zhalo),
         fits.Column(name='lmhalo', format='E', array=lmhalo),
-            ]
+        fits.Column(name='flag_central', format='E', array=flag_central),
+    ]
 
     t = fits.BinTableHDU.from_columns(fits.ColDefs(tabla))
     hdu = fits.PrimaryHDU(header=header)
@@ -114,4 +116,4 @@ def lens_cat(nvoids=100, l=800., rv_min=6., rv_max=30.):
 
 
 if __name__ == '__main__':
-    lens_cat()
+    uniform_cat()
