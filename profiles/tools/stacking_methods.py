@@ -64,22 +64,28 @@ def method3(tcat,
 
     Nvoids = len(xv)
 
-    tr_list = []
+    # tr_list = []
+    tr_list = np.array([])
 
     for i in range(Nvoids):
         v = Void(xv[i], yv[i], zv[i], rv[i])
-        v.get_tracers(cat=tcat, RMAX=RMAX+dr/2, center=True)
-        tr_list += v.tr
+        v.get_tracers(cat=tcat, RMAX=RMAX+dr/10, center=True)
+        # tr_list += v.tr
+        tr_list = np.append(tr_list, v.tr)
 
-    print(f'N tracers: {len(tr_list)}')
+    return tr_list
 
-    stacked_void = Void(0.,0.,0.,1.)
-    stacked_void.tr = tr_list  
-    stacked_void.sort_tracers()
+    ### usar cuando no hay paralelizado
 
-    stacked_profile = stacked_void.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
+    # print(f'N tracers: {len(tr_list)}')
 
-    return stacked_profile/Nvoids
+    # stacked_void = Void(0.,0.,0.,1.)
+    # stacked_void.tr = tr_list  
+    # stacked_void.sort_tracers()
+
+    # stacked_profile = stacked_void.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
+
+    # return stacked_profile/Nvoids
 
 def method3_unpack(args):
     return method3(*args)
@@ -103,7 +109,10 @@ def parallel3(ncores,
 
     LARGO = len(Lsplit)
     timeslice = np.array([])
+    all_tracers = np.array([])
     
+    print(f'Running in parallel with {ncores} cores')
+
     for l, L_l in enumerate(Lsplit):
         print(f'RUN {l+1} OF {LARGO}')            
         t1 = time.time()
@@ -137,7 +146,8 @@ def parallel3(ncores,
 
         #join parts
 
-        
+        for tr_list in salida:
+            all_tracers = np.append(all_tracers, tr_list)
 
         t2 = time.time()
         ts = (t2-t1)/60.
@@ -147,5 +157,17 @@ def parallel3(ncores,
         print('Estimated remaining time')
         print(f'{np.round(np.mean(timeslice)*(LARGO-(l+1)), 3)} min')
 
+    # calculating stacked profile
+    print('Paralelization ended')
+    print('--------')
 
-    return 0
+    print(f'N tracers: {len(all_tracers)}')
+
+    stacked_void = Void(0.,0.,0.,1.)
+    stacked_void.tr = all_tracers
+    stacked_void.sort_tracers()
+
+    void_profile = stacked_void.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
+    void_profile /= Nvoids
+
+    return void_profile
