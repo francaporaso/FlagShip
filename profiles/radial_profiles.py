@@ -53,10 +53,6 @@ def main(tfolder, tracers,
     #save files
     nvoids = len(L[1])
 
-    try:
-        os.mkdir('../results/radial/')
-    except FileExistsError:
-        pass
     folder = '../results/radial/'
     filename = f'sp-{sample}_r{int(Rv_min)}-{int(Rv_max)}_z0{int(z_min*10)}-0{int(z_max*10)}.fits'
     print(f'Saving file in {folder+filename}')
