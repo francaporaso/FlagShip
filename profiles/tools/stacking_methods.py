@@ -3,6 +3,8 @@ from astropy.io import fits
 import time
 from multiprocessing import Pool
 
+import sys
+
 from tools.void import Void, Tracer
 
 def method1(tcat,
@@ -54,8 +56,7 @@ def method2(tcat,
     stacked_profile /= nvoids
     return stacked_profile
     
-def method3(tcat,
-            xv,yv,zv,rv,
+def method3(xv,yv,zv,rv,
             RMIN,RMAX,dr):
     '''
     creating a void object with all tracers from the individual voids
@@ -69,7 +70,7 @@ def method3(tcat,
 
     for i in range(Nvoids):
         v = Void(xv[i], yv[i], zv[i], rv[i])
-        v.get_tracers(cat=tcat, RMAX=RMAX+dr/10, center=True)
+        v.get_tracers(RMAX=RMAX+dr/10, center=True)
         # tr_list += v.tr
         tr_list = np.append(tr_list, v.tr)
 
@@ -83,19 +84,29 @@ def method3(tcat,
     # stacked_void.tr = tr_list  
     # stacked_void.sort_tracers()
 
-    # stacked_profile = stacked_void.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
+    # stacked_profile = stacked_void.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
 
     # return stacked_profile/Nvoids
 
+def method3_singlevoid(xv,yv,zv,rv,
+                       RMIN,RMAX,dr):
+
+    tr_list = []
+
+    v = Void(xv, yv, zv, rv)
+    v.get_tracers(RMAX=RMAX+dr/10, center=True)
+    tr_list += v.tr
+
+    return tr_list
+
 def method3_unpack(args):
-    return method3(*args)
+    return method3_singlevoid(*args)
 
 def parallel3(ncores,
-              tcat, L,
+              L,
               RMIN,RMAX,dr):
 
     #split voids cat
-
     Nvoids = len(L[1])
     if Nvoids < ncores:
         ncores = Nvoids
@@ -109,7 +120,7 @@ def parallel3(ncores,
 
     LARGO = len(Lsplit)
     timeslice = np.array([])
-    all_tracers = np.array([])
+    all_tracers = []
     
     print(f'Running in parallel with {ncores} cores')
 
@@ -122,10 +133,10 @@ def parallel3(ncores,
             # tcat,
             # xv,yv,zv,rv,
             # RMIN,RMAX,dr
-            entrada = [tcat, 
-                       L_l[5],L_l[6],L_l[7],L_l[1],
-                       RMIN, RMAX, dr,
-                       ]
+            entrada = [
+                L_l.T[5],L_l.T[6],L_l.T[7],L_l.T[1],
+                RMIN, RMAX, dr,
+            ]
             
             salida = [method3_unpack(entrada)]
 
@@ -134,10 +145,10 @@ def parallel3(ncores,
             rmax_arr = np.full(lensnum, RMAX)
             dr_arr   = np.full(lensnum, dr)
 
-            entrada = np.array([tcat,
-                                L_l.T[5], L_l.T[6], L_l.T[7], L_l.T[1],
-                                rmin_arr, rmax_arr, dr_arr,
-                                ]).T
+            entrada = np.array([
+                L_l.T[5], L_l.T[6], L_l.T[7], L_l.T[1],
+                rmin_arr, rmax_arr, dr_arr,
+            ]).T
 
             with Pool(processes=lensnum) as pool:
                 salida = np.array(pool.map(method3_unpack,entrada))
@@ -147,7 +158,7 @@ def parallel3(ncores,
         #join parts
 
         for tr_list in salida:
-            all_tracers = np.append(all_tracers, tr_list)
+            all_tracers += tr_list
 
         t2 = time.time()
         ts = (t2-t1)/60.
@@ -167,7 +178,7 @@ def parallel3(ncores,
     stacked_void.tr = all_tracers
     stacked_void.sort_tracers()
 
-    void_profile = stacked_void.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
+    void_profile = stacked_void.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
     void_profile /= Nvoids
 
     return void_profile
