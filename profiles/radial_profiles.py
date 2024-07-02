@@ -38,6 +38,7 @@ def main(tfolder, tracers, lfolder, lenses, sample,
     tmask = tracers.flag_central == 0
     ## setting the tcat to all voids instances
     Void.cat = tracers[tmask]
+    del tracers, tmask
 
     L = lens_cat(lfolder, lenses, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
