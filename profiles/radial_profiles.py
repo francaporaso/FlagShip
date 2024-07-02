@@ -108,10 +108,8 @@ if __name__ == '__main__':
 
     ncores = int(args.ncores)
 
-    # lfolder = '/mnt/simulations/MICE/' # folder of the lenses cat
-    # tfolder = '../../cats/MICE/'       # folder of the tracers cat
-    lfolder = '../tests/' # folder of the lenses cat
-    tfolder = '../tests/'      # folder of the tracers cat
+    lfolder = '/mnt/simulations/MICE/' # folder of the lenses cat
+    tfolder = '../../cats/MICE/'       # folder of the tracers cat
 
     FLAG = 2
 
