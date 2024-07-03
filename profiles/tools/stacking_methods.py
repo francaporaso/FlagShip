@@ -2,7 +2,6 @@ import numpy as np
 from astropy.io import fits
 import time
 from multiprocessing import Pool
-
 import sys
 
 from tools.void import Void, Tracer
@@ -16,14 +15,14 @@ def method1(tcat,
     speeds up when calling get_tracers here
     '''
 
-    voids_list = list(map(Void, xv,yv,zv,rv))
+    voids_list = np.array(map(Void, xv,yv,zv,rv))
     tot_tracers = 0
     for v in voids_list:
-        v.get_tracers(cat=tcat, RMAX=RMAX+dr/2, center=False)
+        v.get_tracers(RMAX=RMAX+dr/2, center=False)
         tot_tracers += len(v.tr)
     print(f'N tracers: {tot_tracers}')
     
-    delta_list = np.array([v.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr) for v in voids_list])
+    delta_list = np.array([v.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr) for v in voids_list])
 
 
     stacked_profile = np.mean(delta_list, axis=0)
@@ -46,10 +45,10 @@ def method2(tcat,
     
     for i in range(nvoids):
         v = Void(xv[i], yv[i], zv[i], rv[i])
-        v.get_tracers(cat=tcat, RMAX=RMAX+dr/2, center=False)
+        v.get_tracers(RMAX=RMAX+dr/2, center=False)
         tot_tracers += len(v.tr)
         v.sort_tracers()
-        stacked_profile += v.radial_density_profile(cat=tcat, RMIN=RMIN, RMAX=RMAX, dr=dr)
+        stacked_profile += v.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
 
     print(f'N tracers: {tot_tracers}')
 
@@ -72,10 +71,6 @@ def method3(xv:list[float], yv:list[float], zv:list[float], rv:list[float],
         v.get_tracers(RMAX=RMAX+dr/10, center=True)
         tr_list += v.tr
 
-    # return tr_list
-
-    ### usar cuando no hay paralelizado
-
     print(f'N tracers: {len(tr_list)}')
 
     stacked_void = Void(0.,0.,0.,1.)
@@ -89,13 +84,16 @@ def method3(xv:list[float], yv:list[float], zv:list[float], rv:list[float],
 def method3_singlevoid(xv,yv,zv,rv,
                        RMIN,RMAX,dr):
 
-    tr_list = []
-
     v = Void(xv, yv, zv, rv)
     v.get_tracers(RMAX=RMAX+dr/10, center=True)
-    tr_list += v.tr
+    v.xc = 0.
+    v.yc = 0.
+    v.zc = 0.
+    v.rv = 1.
+    tracers = len(v.tr)
+    partial_profile = v.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
 
-    return tr_list
+    return partial_profile, tracers
 
 def method3_unpack(args):
     return method3_singlevoid(*args)
@@ -114,16 +112,14 @@ def parallel3(ncores:int,
     slices = slices[(slices < Nvoids)]
     Lsplit = np.split(L.T,slices)
 
-    del L
-
     #for split
 
     LARGO = len(Lsplit)
     timeslice = np.array([])
-    all_tracers = []
-    
-    print(f'Running in parallel with {ncores} cores')
+    profile = np.zeros(int(round((RMAX-RMIN/dr),0)))
+    tracers = 0
 
+    print(f'Running in parallel with {ncores} cores')
     for l, L_l in enumerate(Lsplit):
         print(f'RUN {l+1} OF {LARGO}')            
         t1 = time.time()
@@ -156,9 +152,9 @@ def parallel3(ncores:int,
                 pool.join()
 
         #join parts
-
-        for tr_list in salida:
-            all_tracers += tr_list
+        for partial_prof in salida:
+            profile += partial_prof[0]
+            tracers += partial_prof[1]
 
         t2 = time.time()
         ts = (t2-t1)/60.
@@ -172,13 +168,7 @@ def parallel3(ncores:int,
     print('Paralelization ended')
     print('--------')
 
-    print(f'N tracers: {len(all_tracers)}')
+    print(f'N tracers: {len(tracers)}')
+    profile /= Nvoids
 
-    stacked_void = Void(0.,0.,0.,1.)
-    stacked_void.tr = all_tracers
-    stacked_void.sort_tracers()
-
-    void_profile = stacked_void.radial_density_profile(RMIN=RMIN, RMAX=RMAX, dr=dr)
-    void_profile /= Nvoids
-
-    return void_profile
+    return profile
