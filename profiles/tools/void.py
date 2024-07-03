@@ -15,7 +15,7 @@ class Tracer:
 
 class Void:
 
-    cat = 0 ## catalogo de tracers, compartido entre todas las instancias de Void
+    cat = None ## catalogo de tracers, compartido entre todas las instancias de Void
 
     def __init__(self, xc:float, yc:float, zc:float, rv:float):
         self.xc = xc
