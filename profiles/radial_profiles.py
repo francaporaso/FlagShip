@@ -38,7 +38,7 @@ def main(tfolder, tracers, lfolder, lenses, sample,
     tmask = tracers.flag_central == 0
     ## setting the tcat to all voids instances
     Void.cat = tracers[tmask]
-    del tracers, tmask
+    del tracers
 
     L = lens_cat(lfolder, lenses, 
                  Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, FLAG)
@@ -48,7 +48,7 @@ def main(tfolder, tracers, lfolder, lenses, sample,
     t_in = time.time()
 
     print('Running stacking...')
-    
+
     if ncores==1:
         stacked_profile = method3(xv=L[5], yv=L[6], zv=L[7], rv=L[1], RMIN=RMIN, RMAX=RMAX, dr=dr)
         print(f'Ended in {time.time()-t_in} s')
