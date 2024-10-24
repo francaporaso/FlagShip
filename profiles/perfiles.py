@@ -99,23 +99,13 @@ def stacking(NCORES,
                 RMIN_a, RMAX_a, NBINS_a, 
                 Li.T[1], Li.T[5], Li.T[6], Li.T[7],
             ]).T
-         
+
             with mp.Pool(processes=num) as pool:
                 for res in pool.imap(partial_profile_unpack, entrada):
                     mass  += res[0]
                     halos += res[1]
                     massball  += res[2]
                     halosball += res[3]
-
-                # pool.close()
-                # pool.join()
-
-        # for res in resmap:
-        #     mass  += res[0]
-        #     halos += res[1]
-        #     massball  += res[2]
-        #     halosball += res[3]
-
     
     meandenball   = massball/(4*np.pi/3 * (5*RMAX)**3)
     meanhalosball = halosball/(4*np.pi/3 * (5*RMAX)**3)
