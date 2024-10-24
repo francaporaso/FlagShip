@@ -164,8 +164,8 @@ if __name__ == "__main__":
         zhalo = f[1].data.zhalo
         lmhalo = f[1].data.lmhalo
 
-    mp = 2.93e10 # Msun/h
-    mask_particles = (lmhalo > np.log10(10*mp))
+    mparticle = 2.93e10 # Msun/h
+    mask_particles = (lmhalo > np.log10(10*mparticle))
     xhalo = xhalo[mask_particles]
     yhalo = yhalo[mask_particles]
     zhalo = zhalo[mask_particles]
