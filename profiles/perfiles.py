@@ -5,20 +5,20 @@ from tqdm import tqdm
 
 def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, 
                  flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
-                 split=False, NCORES=1):
+                 split=False, NSPLITS=1):
 
     ## 0:id, 1:Rv, 2:ra, 3:dec, 4:z, 5:xv, 6:yv, 7:zv, 8:rho1, 9:rho2, 10:logp, 11:flag
     L = np.loadtxt(lensname).T
 
-    mask = (L[1] >= Rv_min) & (L[1] <= Rv_max) & (L[4] >= z_min) & (L[4] <= z_max) & (
-            L[8] >= rho1_min) & (L[8] <= rho1_max) & (L[9] >= rho2_min) & (L[9] <= rho2_max) & (L[11] >= flag)
+    mask = (L[1] >= Rv_min) & (L[1] < Rv_max) & (L[4] >= z_min) & (L[4] < z_max) & (
+            L[8] >= rho1_min) & (L[8] < rho1_max) & (L[9] >= rho2_min) & (L[9] < rho2_max) & (L[11] >= flag)
 
     nvoids = mask.sum()
     L = L[:,mask]
 
     if split:
-        lbins = int(round(nvoids/float(NCORES), 0))
-        slices = ((np.arange(lbins)+1)*NCORES).astype(int)
+        lbins = int(round(nvoids/float(NSPLITS), 0))
+        slices = ((np.arange(lbins)+1)*NSPLITS).astype(int)
         slices = slices[(slices < nvoids)]
         L = np.split(L.T,slices)
 
@@ -36,7 +36,7 @@ def get_halos(RMIN, RMAX,
         zhalo = f[1].data.zhalo
         lmhalo = f[1].data.lmhalo
 
-    distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2) / rv
+    distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2 ) / rv
     mask = (distance <= RMAX) & (distance >= RMIN) & (lmhalo > np.log10(10*mp))
 
     lmhalo = lmhalo[mask]
@@ -80,7 +80,7 @@ def stacking(NCORES,
     
     L, nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
                      flag=flag, lensname=lensname,
-                     split=True, NCORES=NCORES)
+                     split=True, NSPLITS=NCORES)
 
     print(f"NVOIDS: .... {nvoids}")
 
@@ -113,11 +113,11 @@ def stacking(NCORES,
             NBINS_a = np.full(num, NBINS)
             entrada = np.array([
                 RMIN_a, RMAX_a, NBINS_a, 
-                Li.T[2], Li.T[5], Li.T[6], Li.T[7],
+                Li.T[1], Li.T[5], Li.T[6], Li.T[7],
             ]).T
          
             with mp.Pool(processes=num) as pool:
-                resmap = np.array(pool.map(partial_profile_unpack, entrada), dtype=object)
+                resmap = [pool.map(partial_profile_unpack, entrada)]
                 pool.close()
                 pool.join()
 
@@ -133,13 +133,13 @@ def stacking(NCORES,
 
     DR = (RMAX-RMIN)/NBINS
     
-    vol = np.zeros(NBINS)
+    vol    = np.zeros(NBINS)
     volcum = np.zeros(NBINS)
     for k in range(NBINS):
         vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
         volcum[k] = ((k+1.0)*DR + RMIN)**3
     
-    vol *= (4*np.pi/3)
+    vol    *= (4*np.pi/3)
     volcum *= (4*np.pi/3)
 
     Delta    = (mass/vol)/meandenball - 1
@@ -158,9 +158,9 @@ def stacking(NCORES,
 
 if __name__ == "__main___":
 
-    NCORES = 4
+    NCORES = 32
     RMIN, RMAX, NBINS = 0.0, 5.0, 50
-    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 10.0, 12.0, 0.2, 0.25, -1.0, -0.8, -1.0, 100.0, 2.0
+    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 6.0, 9.6220, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0, 2.0
     filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}.csv".format(Rv_min, Rv_max, z_min, z_max)
     # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
     # tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
