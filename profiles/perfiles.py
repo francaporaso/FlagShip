@@ -158,7 +158,7 @@ def stacking(NCORES,
 
 if __name__ == "__main___":
 
-    NCORES = 32
+    NCORES = 64
     RMIN, RMAX, NBINS = 0.0, 5.0, 50
     Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 6.0, 9.6220, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0, 2.0
     filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}_2.csv".format(Rv_min, Rv_max, z_min, z_max)
