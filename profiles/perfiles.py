@@ -25,38 +25,22 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
     return L, nvoids
 
 def get_halos(RMIN, RMAX,
-              rv, xv, yv, zv,
-              tracname="/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"):
-
-    mp = 2.93e10 # Msun/h
-
-    with fits.open(tracname) as f:
-        xhalo = f[1].data.xhalo
-        yhalo = f[1].data.yhalo
-        zhalo = f[1].data.zhalo
-        lmhalo = f[1].data.lmhalo
+              rv, xv, yv, zv):
 
     distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2 ) / rv
-    mask = (distance <= RMAX) & (distance >= RMIN) & (lmhalo > np.log10(10*mp))
+    mask_ball = (distance < 5*RMAX) & (distance >= 0.0)
+    mask_prof = (distance < RMAX) & (distance >= RMIN)
 
-    lmhalo = lmhalo[mask]
-    distance = distance[mask]
+    massball = np.sum(10.0 ** lmhalo[mask_ball])
+    halosball = len(lmhalo[mask_ball])
 
-    massball = np.sum(10.0 ** lmhalo)
-    halosball = len(distance)
-
-    return lmhalo, distance, massball, halosball
+    return lmhalo[mask_prof], distance[mask_prof], massball, halosball
 
 def partial_profile(RMIN,RMAX,NBINS,
-                    rv, xv, yv, zv,
-                    tracname="/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"):
-                    #"/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"):
+                    rv, xv, yv, zv):
     
     NBINS = int(NBINS)
-    logm, distance, massball, halosball = get_halos(0.0, 5*RMAX, rv, xv, yv, zv, tracname=tracname)
-
-    mask = (distance < RMAX) & (distance >= RMIN)
-    logm, distance = logm[mask], distance[mask]
+    logm, distance, massball, halosball = get_halos(RMIN, RMAX, rv, xv, yv, zv)
 
     NHalos = np.zeros(NBINS)
     mass = np.zeros(NBINS)
@@ -117,15 +101,20 @@ def stacking(NCORES,
             ]).T
          
             with mp.Pool(processes=num) as pool:
-                resmap = pool.map(partial_profile_unpack, entrada)
-                pool.close()
-                pool.join()
+                for res in pool.imap(partial_profile_unpack, entrada):
+                    mass  += res[0]
+                    halos += res[1]
+                    massball  += res[2]
+                    halosball += res[3]
 
-        for res in resmap:
-            mass  += res[0]
-            halos += res[1]
-            massball  += res[2]
-            halosball += res[3]
+                # pool.close()
+                # pool.join()
+
+        # for res in resmap:
+        #     mass  += res[0]
+        #     halos += res[1]
+        #     massball  += res[2]
+        #     halosball += res[3]
 
     
     meandenball   = massball/(4*np.pi/3 * (5*RMAX)**3)
@@ -156,16 +145,32 @@ def stacking(NCORES,
     print("END!")
 
 
-if __name__ == "__main___":
+if __name__ == "__main__":
 
-    NCORES = 64
+    NCORES = 4
     RMIN, RMAX, NBINS = 0.0, 5.0, 50
     Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 6.0, 9.6220, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0, 2.0
-    filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}_2.csv".format(Rv_min, Rv_max, z_min, z_max)
-    # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
-    # tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
-    lensname = "/mnt/simulations/MICE/voids_MICE.dat"
-    tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
+    # filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}_2.csv".format(Rv_min, Rv_max, z_min, z_max)
+    filename = "radialprof_stack_TEST.csv"
+    lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
+    tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
+    # lensname = "/mnt/simulations/MICE/voids_MICE.dat"
+    # tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
+
+    ### opening tracers file and general masking
+    with fits.open(tracname) as f:
+        xhalo = f[1].data.xhalo
+        yhalo = f[1].data.yhalo
+        zhalo = f[1].data.zhalo
+        lmhalo = f[1].data.lmhalo
+
+    mp = 2.93e10 # Msun/h
+    mask_particles = (lmhalo > np.log10(10*mp))
+    xhalo = xhalo[mask_particles]
+    yhalo = yhalo[mask_particles]
+    zhalo = zhalo[mask_particles]
+    lmhalo = lmhalo[mask_particles]
+    ###
 
     stacking(
         NCORES, 
