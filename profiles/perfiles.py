@@ -55,7 +55,7 @@ def partial_profile(RMIN,RMAX,NBINS,
     NBINS = int(NBINS)
     logm, distance, massball, halosball = get_halos(0.0, 5*RMAX, rv, xv, yv, zv, tracname=tracname)
 
-    mask = (distance <= RMAX) & (distance >= RMIN)
+    mask = (distance < RMAX) & (distance >= RMIN)
     logm, distance = logm[mask], distance[mask]
 
     NHalos = np.zeros(NBINS)
