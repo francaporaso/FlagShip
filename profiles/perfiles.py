@@ -49,8 +49,8 @@ def get_halos(RMIN, RMAX,
 
 def partial_profile(RMIN,RMAX,NBINS,
                     rv, xv, yv, zv,
-                    tracname=#"/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"):
-                    "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"):
+                    tracname="/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"):
+                    #"/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"):
     
     NBINS = int(NBINS)
     logm, distance, massball, halosball = get_halos(0.0, 5*RMAX, rv, xv, yv, zv, tracname=tracname)
@@ -162,10 +162,10 @@ if __name__ == "__main___":
     RMIN, RMAX, NBINS = 0.0, 5.0, 50
     Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 10.0, 12.0, 0.2, 0.25, -1.0, -0.8, -1.0, 100.0, 2.0
     filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}.csv".format(Rv_min, Rv_max, z_min, z_max)
-    lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
-    tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
-    # lensname = "/mnt/simulations/MICE/voids_MICE.dat"
-    # tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
+    # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
+    # tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
+    lensname = "/mnt/simulations/MICE/voids_MICE.dat"
+    tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
 
     stacking(
         NCORES, 
