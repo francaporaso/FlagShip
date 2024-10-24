@@ -147,15 +147,15 @@ def stacking(NCORES,
 
 if __name__ == "__main__":
 
-    NCORES = 4
+    NCORES = 64
     RMIN, RMAX, NBINS = 0.0, 5.0, 50
     Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 6.0, 9.6220, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0, 2.0
     # filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}_2.csv".format(Rv_min, Rv_max, z_min, z_max)
     filename = "radialprof_stack_TEST.csv"
-    lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
-    tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
-    # lensname = "/mnt/simulations/MICE/voids_MICE.dat"
-    # tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
+    # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
+    # tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
+    lensname = "/mnt/simulations/MICE/voids_MICE.dat"
+    tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
 
     ### opening tracers file and general masking
     with fits.open(tracname) as f:
