@@ -12,17 +12,17 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
 
     mask = (L[1] >= Rv_min) & (L[1] <= Rv_max) & (L[4] >= z_min) & (L[4] <= z_max) & (
             L[8] >= rho1_min) & (L[8] <= rho1_max) & (L[9] >= rho2_min) & (L[9] <= rho2_max) & (L[11] >= flag)
-    
+
+    nvoids = mask.sum()
     L = L[:,mask]
 
     if split:
-        nvoids = mask.sum()
         lbins = int(round(nvoids/float(NCORES), 0))
         slices = ((np.arange(lbins)+1)*NCORES).astype(int)
         slices = slices[(slices < nvoids)]
         L = np.split(L.T,slices)
 
-    return L
+    return L, nvoids
 
 def get_halos(RMIN, RMAX,
               rv, xv, yv, zv,
@@ -49,8 +49,10 @@ def get_halos(RMIN, RMAX,
 
 def partial_profile(RMIN,RMAX,NBINS,
                     rv, xv, yv, zv,
-                    tracname="/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"):
+                    tracname=#"/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"):
+                    "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"):
     
+    NBINS = int(NBINS)
     logm, distance, massball, halosball = get_halos(0.0, 5*RMAX, rv, xv, yv, zv, tracname=tracname)
 
     mask = (distance <= RMAX) & (distance >= RMIN)
@@ -61,7 +63,7 @@ def partial_profile(RMIN,RMAX,NBINS,
 
     DR = (RMAX-RMIN)/NBINS
     for lm,d in zip(logm,distance):
-        ibin = np.floor((d-RMIN)/DR)
+        ibin = np.floor((d-RMIN)/DR).astype(int)
         NHalos[ibin] += 1.0
         mass[ibin] += 10.0**lm
 
@@ -76,17 +78,16 @@ def stacking(NCORES,
              flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
              filename="pru_stack.csv"):
     
-    L = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
+    L, nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
                      flag=flag, lensname=lensname,
                      split=True, NCORES=NCORES)
 
-    nvoids = L.shape[1]
     print(f"NVOIDS: .... {nvoids}")
 
     if nvoids < NCORES:
             NCORES = nvoids
 
-    mass = np.zeros(NBINS)
+    mass  = np.zeros(NBINS)
     halos = np.zeros(NBINS)
     massball = 0.0
     halosball = 0.0
@@ -113,17 +114,17 @@ def stacking(NCORES,
             entrada = np.array([
                 RMIN_a, RMAX_a, NBINS_a, 
                 Li.T[2], Li.T[5], Li.T[6], Li.T[7],
-            ])
+            ]).T
          
             with mp.Pool(processes=num) as pool:
-                resmap = np.array(pool.imap(partial_profile_unpack, entrada))
+                resmap = np.array(pool.map(partial_profile_unpack, entrada), dtype=object)
                 pool.close()
                 pool.join()
 
         for res in resmap:
-            mass += res[0]
+            mass  += res[0]
             halos += res[1]
-            massball += res[2]
+            massball  += res[2]
             halosball += res[3]
 
     
@@ -155,16 +156,16 @@ def stacking(NCORES,
     print("END!")
 
 
-if __name__=="__main___":
+if __name__ == "__main___":
 
     NCORES = 4
     RMIN, RMAX, NBINS = 0.0, 5.0, 50
     Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 10.0, 12.0, 0.2, 0.25, -1.0, -0.8, -1.0, 100.0, 2.0
     filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}.csv".format(Rv_min, Rv_max, z_min, z_max)
-    # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
-    # tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
-    lensname = "/mnt/simulations/MICE/voids_MICE.dat"
-    tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
+    lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
+    tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
+    # lensname = "/mnt/simulations/MICE/voids_MICE.dat"
+    # tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
 
     stacking(
         NCORES, 
