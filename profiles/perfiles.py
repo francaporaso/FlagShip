@@ -5,10 +5,31 @@ from tqdm import tqdm
 
 def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, 
                  flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
-                 split=False, NSPLITS=1):
+                 split=False, NSPLITS=1,
+                 resample=False, nk=1):
 
     ## 0:id, 1:Rv, 2:ra, 3:dec, 4:z, 5:xv, 6:yv, 7:zv, 8:rho1, 9:rho2, 10:logp, 11:flag
     L = np.loadtxt(lensname).T
+    
+    if resample:
+        NNN = len(L[0]) ##total void number
+        ra,dec = L[2],L[3]
+        K    = np.zeros((nk+1,NNN))
+        K[0] = np.ones(NNN).astype(bool)
+
+        ramin  = np.min(ra)
+        cdec   = np.sin(np.deg2rad(dec))
+        decmin = np.min(cdec)
+        dra    = ((np.max(ra)+1.e-5) - ramin)/10.
+        ddec   = ((np.max(cdec)+1.e-5) - decmin)/10.
+
+        c = 1
+        for a in range(10): 
+            for d in range(10): 
+                mra  = (ra  >= ramin + a*dra)&(ra < ramin + (a+1)*dra) 
+                mdec = (cdec >= decmin + d*ddec)&(cdec < decmin + (d+1)*ddec) 
+                K[c] = ~(mra&mdec)
+                c += 1
 
     mask = (L[1] >= Rv_min) & (L[1] < Rv_max) & (L[4] >= z_min) & (L[4] < z_max) & (
             L[8] >= rho1_min) & (L[8] < rho1_max) & (L[9] >= rho2_min) & (L[9] < rho2_max) & (L[11] >= flag)
@@ -16,13 +37,14 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
     nvoids = mask.sum()
     L = L[:,mask]
 
-    if split:
+    if split and resample:
         lbins = int(round(nvoids/float(NSPLITS), 0))
         slices = ((np.arange(lbins)+1)*NSPLITS).astype(int)
         slices = slices[(slices < nvoids)]
-        L = np.split(L.T,slices)
+        L = np.split(L.T, slices)
+        K = np.split(K.T, slices)
 
-    return L, nvoids
+    return L, K, nvoids
 
 def get_halos(RMIN, RMAX,
               rv, xv, yv, zv):
@@ -62,21 +84,23 @@ def stacking(NCORES,
              flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
              filename="pru_stack.csv"):
     
-    L, nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
-                     flag=flag, lensname=lensname,
-                     split=True, NSPLITS=NCORES)
+    L, K, nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
+                             flag=flag, lensname=lensname,
+                             split=True, NSPLITS=NCORES,
+                             resample=True, nk=100)
 
     print(f"NVOIDS: .... {nvoids}")
 
     if nvoids < NCORES:
             NCORES = nvoids
 
+    ### TODO 
+    ### cambiar estos por la versión q admite jackknife, como forVoid_slice_MICE.py
     mass  = np.zeros(NBINS)
     halos = np.zeros(NBINS)
     massball = 0.0
     halosball = 0.0
 
-    ### tqdm is progressbar
     ### TODO
     #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
     for i,Li in enumerate(tqdm(L)):
