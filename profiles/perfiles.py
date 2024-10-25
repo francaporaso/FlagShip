@@ -164,7 +164,7 @@ def stacking(NCORES,
     DeltaHalos    = np.zeros((nk+1, NBINS))
     DeltaHalosCum = np.zeros((nk+1, NBINS))
 
-    for k in range(nk+1):
+    for i in range(nk+1):
         Delta[i,:]    = (mass[i]/vol)/meandenball[i] - 1
         DeltaCum[i,:] = (np.cumsum(mass[i])/volcum)/meandenball[i] - 1
         DeltaHalos[i,:]    = (mass[i]/vol)/meanhalosball[i] - 1
@@ -204,6 +204,9 @@ def stacking(NCORES,
     # print("END!")
 
 if __name__ == "__main__":
+
+    ### TODO 
+    ### el perfil parece estar yendo a 0.2 en vez de 0.... chequear......
 
     import argparse as ag
     
