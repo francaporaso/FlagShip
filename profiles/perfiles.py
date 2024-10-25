@@ -145,50 +145,54 @@ def stacking(NCORES,
                     massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
                     halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
 
-    ## reshape is for axis to match and do the broadcast later
 
-    meandenball   = (massball/(4*np.pi/3 * (5*RMAX)**3)).reshape((101,1))
-    meanhalosball = (halosball/(4*np.pi/3 * (5*RMAX)**3)).reshape((101,1))
+    # ## reshape is for axis to match and do the broadcast later
+    # meandenball   = (massball/(4*np.pi/3 * (5*RMAX)**3)).reshape((101,1))
+    # meanhalosball = (halosball/(4*np.pi/3 * (5*RMAX)**3)).reshape((101,1))
 
-    DR = (RMAX-RMIN)/NBINS
+    # DR = (RMAX-RMIN)/NBINS
     
-    vol    = np.zeros(NBINS)
-    volcum = np.zeros(NBINS)
-    for k in range(NBINS):
-        vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
-        volcum[k] = ((k+1.0)*DR + RMIN)**3
+    # vol    = np.zeros(NBINS)
+    # volcum = np.zeros(NBINS)
+    # for k in range(NBINS):
+    #     vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
+    #     volcum[k] = ((k+1.0)*DR + RMIN)**3
     
-    vol    *= (4*np.pi/3)
-    volcum *= (4*np.pi/3)
+    # vol    *= (4*np.pi/3)
+    # volcum *= (4*np.pi/3)
 
-    Delta    = (mass/vol)/meandenball - 1
-    DeltaCum = (np.cumsum(mass, axis=1)/volcum)/meandenball - 1
-    DeltaHalos    = (halos/vol)/meanhalosball - 1
-    DeltaHalosCum = (np.cumsum(halos, axis=1)/volcum)/meanhalosball - 1
+    # Delta    = (mass/vol)/meandenball - 1
+    # DeltaCum = (np.cumsum(mass, axis=1)/volcum)/meandenball - 1
+    # DeltaHalos    = (halos/vol)/meanhalosball - 1
+    # DeltaHalosCum = (np.cumsum(halos, axis=1)/volcum)/meanhalosball - 1
 
-    ## calculating covariance matrix
-    cov_delta    = cov_matrix(Delta[1:,:])
-    cov_deltacum = cov_matrix(DeltaCum[1:,:])
-    cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
-    cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
+    # ## calculating covariance matrix
+    # cov_delta    = cov_matrix(Delta[1:,:])
+    # cov_deltacum = cov_matrix(DeltaCum[1:,:])
+    # cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
+    # cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
 
 
-    print(f"Saving in: {filename}")
-    print(f"Saving in: 'cov_delta'+{filename}")
-    print(f"Saving in: 'cov_deltacum'+{filename}")
-    print(f"Saving in: 'cov_deltahalos'+{filename}")
-    print(f"Saving in: 'cov_deltahaloscum'+{filename}")
+    # print(f"Saving in: {filename}")
+    # print(f"Saving in: {'cov_delta'+filename}")
+    # print(f"Saving in: {'cov_deltacum'+filename}")
+    # print(f"Saving in: {'cov_deltahalos'+filename}")
+    # print(f"Saving in: {'cov_deltahaloscum'+filename}")
 
-    # Stack the arrays column-wise and save
-    data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
-    np.savetxt(filename, data, delimiter=',')
-    np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
-    np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
-    np.savetxt('cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
-    np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
+    # # Stack the arrays column-wise and save
+    # data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
+    # np.savetxt(filename, data, delimiter=',')
+    # np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
+    # np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
+    # np.savetxt('cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
+    # np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
 
-    print("END!")
+    # print("END!")
 
+    ### ---------------------------------------------------------------TEST!
+
+    np.savetxt('test_masa.csv', mass, ',')
+    np.savetxt('test_halos.csv', halos, ',')
 
 if __name__ == "__main__":
 
