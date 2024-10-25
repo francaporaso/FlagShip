@@ -191,33 +191,57 @@ def stacking(NCORES,
     np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
 
     print("END!")
+
     return 0
     ### ---------------------------------------------------------------TEST!
     
-    test=False
-    if test:
-        print('---------------------------------TEST!')
+    # print('---------------------------------TEST!')
 
-        np.savetxt('test_masa.csv', mass, delimiter=',')
-        np.savetxt('test_halos.csv', halos, delimiter=',')
-        np.savetxt('test_ball.csv', np.column_stack([massball, halosball]), delimiter=',')
+    # np.savetxt('test_masa.csv', mass, delimiter=',')
+    # np.savetxt('test_halos.csv', halos, delimiter=',')
+    # np.savetxt('test_ball.csv', np.column_stack([massball, halosball]), delimiter=',')
 
-        print("END!")
+    # print("END!")
 
 if __name__ == "__main__":
 
-    NCORES = 100
-    RMIN, RMAX, NBINS = 0.0, 5.0, 50
-    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 10.0, 12.0, 0.2, 0.3, -1.0, -0.8, -1.0, 100.0, 2.0
-    # filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}_2.csv".format(Rv_min, Rv_max, z_min, z_max)
-    filename = "radialprof_stack_TEST.csv"
-    # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
-    # tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
-    lensname = "/mnt/simulations/MICE/voids_MICE.dat"
-    tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
+    import argparse as ag
+    
+    options = {
+        '--NCORES':100,
+        '--RMIN':0.0,
+        '--RMAX':5.0,
+        '--NBINS':50,
+        '--Rv_min':10.0,
+        '--Rv_max':12.0,
+        '--z_min':0.2,
+        '--z_max':0.3,
+        '--rho1_min':-1.0,
+        '--rho1_max':-0.8,
+        '--rho2_min':-1.0,
+        '--rho2_max':100.0,
+        '--flag':2.0,
+        '--filename':'test',
+        '--lensname':'server',
+        '--tracname':'server',
+    }
+    
+    parser = ag.ArgumentParser()
+    for key,value in options.items():
+        parser.add_argument(key, action='store', dest=key[2:], default=value)
 
-    ### opening tracers file and general masking
-    with fits.open(tracname) as f:
+    a = parser.parse_args()
+
+    if (a.tracname == 'local') or (a.lensname == 'local'):
+        a.lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
+        a.tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
+
+    else:
+        a.tracname = '/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits'
+        a.lensname = '/mnt/simulations/MICE/voids_MICE.dat'
+
+    ## opening tracers file and general masking
+    with fits.open(a.tracname) as f:
         xhalo = f[1].data.xhalo
         yhalo = f[1].data.yhalo
         zhalo = f[1].data.zhalo
@@ -232,9 +256,19 @@ if __name__ == "__main__":
     ###
 
     stacking(
-        NCORES, 
-        RMIN, RMAX, NBINS,
-        Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
-        flag=flag, lensname=lensname,
-        filename=filename,
+        a.NCORES, 
+        a.RMIN, a.RMAX, a.NBINS,
+        a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max,
+        flag=a.flag, lensname=a.lensname,
+        filename=a.filename,
     )
+
+    # NCORES = 100
+    # RMIN, RMAX, NBINS = 0.0, 5.0, 50
+    # Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 10.0, 12.0, 0.2, 0.3, -1.0, -0.8, -1.0, 100.0, 2.0
+    # # filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}_2.csv".format(Rv_min, Rv_max, z_min, z_max)
+    # filename = "radialprof_stack_TEST.csv"
+    # # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
+    # # tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
+    # lensname = "/mnt/simulations/MICE/voids_MICE.dat"
+    # tracname = "/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits"
