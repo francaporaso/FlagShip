@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
     NCORES = 100
     RMIN, RMAX, NBINS = 0.0, 5.0, 50
-    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 10.0, 12.0, 0.2, 0.22, -1.0, -0.8, 0.0, 100.0, 2.0
+    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 10.0, 12.0, 0.2, 0.3, -1.0, -0.8, 0.0, 100.0, 2.0
     # filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}_2.csv".format(Rv_min, Rv_max, z_min, z_max)
     filename = "radialprof_stack_TEST.csv"
     # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
