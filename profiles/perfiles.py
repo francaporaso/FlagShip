@@ -134,11 +134,12 @@ def stacking(NCORES,
                 Li.T[1], Li.T[5], Li.T[6], Li.T[7],
             ]).T
 
+            j = 0
             with mp.Pool(processes=num) as pool:
-                for j,res in enumerate(pool.imap(partial_profile_unpack, entrada)):
-                    
+
+                for res in pool.imap(partial_profile_unpack, entrada):
                     km = np.tile(K[i][j], (NBINS,1)).T
-                    
+                    j += 1
                     mass  += np.tile(res[0], (nk+1,1))*km
                     halos += np.tile(res[1], (nk+1,1))*km
                     massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
@@ -193,7 +194,7 @@ if __name__ == "__main__":
 
     NCORES = 100
     RMIN, RMAX, NBINS = 0.0, 5.0, 50
-    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 6.0, 9.622, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0, 2.0
+    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag = 10.0, 12.0, 0.2, 0.22, -1.0, -0.8, 0.0, 100.0, 2.0
     # filename = "radialprof_stack_R_{:.0f}_{:.0f}_z{:.1f}_{:.1f}_2.csv".format(Rv_min, Rv_max, z_min, z_max)
     filename = "radialprof_stack_TEST.csv"
     # lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
