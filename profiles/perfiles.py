@@ -224,12 +224,19 @@ if __name__ == "__main__":
     if (a.tracname == 'local') or (a.lensname == 'local'):
         a.lensname = "/home/franco/FAMAF/Lensing/cats/MICE/voids_MICE.dat"
         a.tracname = "/home/franco/FAMAF/Lensing/cats/MICE/mice_halos_cut.fits"
-
     else:
         a.tracname = '/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits'
         a.lensname = '/mnt/simulations/MICE/voids_MICE.dat'
 
-    a.filename += '.csv'
+    if a.rho2_min < 0.0:
+        tipo = 'R'
+    elif a.rho2_min > 0.0:
+        tipo = 'S'
+    else:
+        tipo = 'A'
+
+    if (a.filename!='test') or (a.filename!='pru'):
+        a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
 
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
@@ -244,7 +251,6 @@ if __name__ == "__main__":
     yhalo = yhalo[mask_particles]
     zhalo = zhalo[mask_particles]
     lmhalo = lmhalo[mask_particles]
-    ###
 
     stacking(
         a.NCORES, 
