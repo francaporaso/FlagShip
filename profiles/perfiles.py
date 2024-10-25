@@ -190,9 +190,13 @@ def stacking(NCORES,
     # print("END!")
 
     ### ---------------------------------------------------------------TEST!
+    print('---------------------------------TEST!')
 
-    np.savetxt('test_masa.csv', mass, ',')
-    np.savetxt('test_halos.csv', halos, ',')
+    np.savetxt('test_masa.csv', mass, delimiter=',')
+    np.savetxt('test_halos.csv', halos, delimiter=',')
+    np.savetxt('test_ball.csv', np.column_stack([massball, halosball]), delimiter=',')
+
+    print("END!")
 
 if __name__ == "__main__":
 
