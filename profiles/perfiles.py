@@ -217,7 +217,10 @@ if __name__ == "__main__":
     
     parser = ag.ArgumentParser()
     for key,value in options.items():
-        parser.add_argument(key, action='store', dest=key[2:], default=value)
+        if key[-4:]=='name':
+            parser.add_argument(key, action='store', dest=key[2:], default=value, type=str)
+        else:
+            parser.add_argument(key, action='store', dest=key[2:], default=value, type=float)
 
     a = parser.parse_args()
 
@@ -228,9 +231,9 @@ if __name__ == "__main__":
         a.tracname = '/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits'
         a.lensname = '/mnt/simulations/MICE/voids_MICE.dat'
 
-    if a.rho2_min < 0.0:
+    if a.rho2_min <= 0.0 and a.rho2_max <= 0.0 :
         tipo = 'R'
-    elif a.rho2_min > 0.0:
+    elif a.rho2_min >= 0.0 and a.rho2_max >= 0.0:
         tipo = 'S'
     else:
         tipo = 'A'
