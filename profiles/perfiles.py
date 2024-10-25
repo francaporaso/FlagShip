@@ -209,21 +209,10 @@ if __name__ == "__main__":
     
     options = {
         '--NCORES':100,
-        '--RMIN':0.0,
-        '--RMAX':5.0,
-        '--NBINS':50,
-        '--Rv_min':10.0,
-        '--Rv_max':12.0,
-        '--z_min':0.2,
-        '--z_max':0.3,
-        '--rho1_min':-1.0,
-        '--rho1_max':-0.8,
-        '--rho2_min':-1.0,
-        '--rho2_max':100.0,
+        '--RMIN':0.0, '--RMAX':5.0, '--NBINS':50,
+        '--Rv_min':10.0, '--Rv_max':12.0, '--z_min':0.2, '--z_max':0.3, '--rho1_min':-1.0, '--rho1_max':-0.8, '--rho2_min':-1.0, '--rho2_max':100.0,
         '--flag':2.0,
-        '--filename':'test',
-        '--lensname':'server',
-        '--tracname':'server',
+        '--filename':'test', '--lensname':'server', '--tracname':'server',
     }
     
     parser = ag.ArgumentParser()
@@ -239,6 +228,8 @@ if __name__ == "__main__":
     else:
         a.tracname = '/home/fcaporaso/cats/MICE/mice_halos_centralesF.fits'
         a.lensname = '/mnt/simulations/MICE/voids_MICE.dat'
+
+    a.filename += '.csv'
 
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
