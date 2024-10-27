@@ -222,6 +222,8 @@ if __name__ == "__main__":
     for key,value in options.items():
         if key[-4:]=='name':
             parser.add_argument(key, action='store', dest=key[2:], default=value, type=str)
+        elif (key[2:]=='NBINS') or (key[2:]=='NCORES'):
+            parser.add_argument(key, action='store', dest=key[2:], default=value, type=int)
         else:
             parser.add_argument(key, action='store', dest=key[2:], default=value, type=float)
 
@@ -243,6 +245,11 @@ if __name__ == "__main__":
 
     # if (a.filename!='test') or (a.filename!='pru'):
     a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
+
+    for ent in a.__dict__.values():
+        print(type(ent))
+
+    assert False
 
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
