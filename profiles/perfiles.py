@@ -60,6 +60,8 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
 
     return L, K, nvoids
 
+## TODO
+## testear velocidad con scipy cdist vs np.sqrt(...)
 def get_halos(RMIN, RMAX,
               rv, xv, yv, zv):
 
@@ -72,6 +74,8 @@ def get_halos(RMIN, RMAX,
 
     return lmhalo[mask_prof], distance[mask_prof], massball, halosball
 
+## TODO
+## agregar solucion a edgecases cuando el perfil se escapa de la caja
 def partial_profile(RMIN,RMAX,NBINS,
                     rv, xv, yv, zv):
     
@@ -92,6 +96,8 @@ def partial_profile(RMIN,RMAX,NBINS,
 def partial_profile_unpack(myinput):
     return partial_profile(*myinput)
 
+## TODO
+## cambiar guardado en .csv por .fits
 def stacking(NCORES, 
              RMIN, RMAX, NBINS,
              Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
