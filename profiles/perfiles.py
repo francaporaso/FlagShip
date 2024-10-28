@@ -60,13 +60,8 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
 
     return L, K, nvoids
 
-## TODO
-## cambiar por np.where ? capaz hay problemas con la mascara con python nativo....
 def get_halos(RMIN, RMAX,
               rv, xv, yv, zv):
-    
-    ###  TEST debugging
-    print(xhalo.shape)
 
     distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2 ) / rv
     mask_ball = (distance < 5*RMAX) & (distance >= 0.0)
