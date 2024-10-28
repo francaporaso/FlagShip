@@ -22,6 +22,19 @@ else:
 a['filename'] = "radialprof_TEST.csv"
 
 
+with fits.open(a.tracname) as f:
+    xhalo = f[1].data.xhalo
+    yhalo = f[1].data.yhalo
+    zhalo = f[1].data.zhalo
+    lmhalo = f[1].data.lmhalo
+
+mparticle = 2.93e10 # Msun/h
+mask_particles = (lmhalo > np.log10(10*mparticle))
+xhalo = xhalo[mask_particles]
+yhalo = yhalo[mask_particles]
+zhalo = zhalo[mask_particles]
+lmhalo = lmhalo[mask_particles]
+
 def perfiles_serie():
 
     L, _, _ = lenscat_load(a['Rv_min'], a['Rv_max'], a['z_min'], a['z_max'], a['rho1_min'], a['rho1_max'], a['rho2_min'], a['rho2_max'],
