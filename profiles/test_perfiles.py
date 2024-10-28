@@ -33,7 +33,7 @@ def perfiles_serie():
     massball  = 0.0
     halosball = 0.0
 
-    profs = [partial_profile(a['NBINS'], L[1,0], L[5,0], L[6,0], L[7,0]) for i in range(50)]
+    profs = [partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,0], L[5,0], L[6,0], L[7,0]) for i in range(50)]
 
     for res in profs:
         mass  += res[0]
