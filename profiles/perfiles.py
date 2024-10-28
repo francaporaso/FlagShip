@@ -61,9 +61,12 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
     return L, K, nvoids
 
 ## TODO
-## testear benchmark scipy.cdist vs np.sqrt(...)
+## cambiar por np.where ? capaz hay problemas con la mascara con python nativo....
 def get_halos(RMIN, RMAX,
               rv, xv, yv, zv):
+    
+    ###  TEST debugging
+    print(xhalo.shape)
 
     distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2 ) / rv
     mask_ball = (distance < 5*RMAX) & (distance >= 0.0)
@@ -188,7 +191,7 @@ def stacking(NCORES,
     for i in range(nk+1):
         Delta[i,:]    = (mass[i]/vol)/meandenball[i] - 1
         DeltaCum[i,:] = (np.cumsum(mass[i])/volcum)/meandenball[i] - 1
-        DeltaHalos[i,:]    = (mass[i]/vol)/meanhalosball[i] - 1
+        DeltaHalos[i,:]    = (halos[i]/vol)/meanhalosball[i] - 1
         DeltaHalosCum[i,:] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
 
     ## calculating covariance matrix
