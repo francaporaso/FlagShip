@@ -10,6 +10,7 @@ from functions import *
 ##      logetc()
 ## class HSW(Modelo):
 ##      ...
+
 def log_likelihood_HSW(theta, r, y, yerr):
     '''
     r : eje x
