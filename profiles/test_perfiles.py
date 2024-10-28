@@ -78,6 +78,8 @@ def perfiles_serie():
     massball  = 0.0
     halosball = 0.0
 
+    print(L[0][0:50])
+
     profs = [partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,0], L[5,0], L[6,0], L[7,0]) for i in range(50)]
 
     for res in profs:
@@ -105,7 +107,7 @@ def perfiles_serie():
     DeltaCum = np.cumsum(mass)/volcum/meandenball - 1
     DeltaHalosCum = np.cumsum(halos)/volcum/meanhalosball - 1
 
-    print(f"Saving in: 'serie_'{a['filename']}")
+    print(f"Saving in: serie_{a['filename']}")
     data = np.column_stack((Delta, DeltaCum, DeltaHalos, DeltaHalosCum))
     np.savetxt("serie_"+a['filename'], data, delimiter=',')
 
@@ -132,7 +134,7 @@ def perfiles_paralelo():
                 a['NBINS'],
                 Li[1], Li[5], Li[6], Li[7],
             ])
-            
+            print(Li[0])
             resmap = partial_profile(*entrada)
 
         else:
@@ -143,6 +145,8 @@ def perfiles_paralelo():
                 RMIN_a, RMAX_a, NBINS_a, 
                 Li.T[1], Li.T[5], Li.T[6], Li.T[7],
             ]).T
+
+            print(Li[0])
 
             with mp.Pool(processes=num) as pool:
                 resmap = pool.map(partial_profile_unpack, entrada)
@@ -182,7 +186,7 @@ def perfiles_paralelo():
     DeltaCum = np.cumsum(mass)/volcum/meandenball - 1
     DeltaHalosCum = np.cumsum(halos)/volcum/meanhalosball - 1    
 
-    print(f"Saving in: 'paralelo_'{a['filename']}")
+    print(f"Saving in: paralelo_{a['filename']}")
     data = np.column_stack((Delta, DeltaCum, DeltaHalos, DeltaHalosCum))
     np.savetxt("paralelo_"+a['filename'], data, delimiter=',')
 
