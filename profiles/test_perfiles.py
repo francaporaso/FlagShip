@@ -78,9 +78,7 @@ def perfiles_serie():
     massball  = 0.0
     halosball = 0.0
 
-    print(L[0][0:50])
-
-    profs = [partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,0], L[5,0], L[6,0], L[7,0]) for i in range(50)]
+    profs = [partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,i], L[5,i], L[6,i], L[7,i]) for i in range(50)]
 
     for res in profs:
         mass  += res[0]
@@ -134,7 +132,7 @@ def perfiles_paralelo():
                 a['NBINS'],
                 Li[1], Li[5], Li[6], Li[7],
             ])
-            print(Li[0])
+
             resmap = partial_profile(*entrada)
 
         else:
@@ -146,10 +144,8 @@ def perfiles_paralelo():
                 Li.T[1], Li.T[5], Li.T[6], Li.T[7],
             ]).T
 
-            print(Li.T[0])
-
             with mp.Pool(processes=num) as pool:
-                resmap = np.array(pool.map(partial_profile_unpack, entrada))
+                resmap = pool.map(partial_profile_unpack, entrada)
                 pool.close()
                 pool.join()
             
@@ -197,5 +193,5 @@ def perfiles_paralelo():
 
     return 0
 
-# perfiles_serie()
-perfiles_paralelo()
+perfiles_serie()
+# perfiles_paralelo()
