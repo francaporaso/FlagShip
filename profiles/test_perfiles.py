@@ -22,7 +22,7 @@ else:
 a['filename'] = "radialprof_TEST.csv"
 
 
-with fits.open(a.tracname) as f:
+with fits.open(a['tracname']) as f:
     xhalo = f[1].data.xhalo
     yhalo = f[1].data.yhalo
     zhalo = f[1].data.zhalo
