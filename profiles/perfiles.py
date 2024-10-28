@@ -26,7 +26,7 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
     L = np.loadtxt(lensname).T
 
     nk = 100 ## para cambiarlo hay que repensar el calculo de (dra,ddec) y el doble for loop
-    NNN = len(L[0]) ##total void number
+    NNN = len(L[0]) ##total number of voids
     ra,dec = L[2],L[3]
     K    = np.zeros((nk+1,NNN))
     K[0] = np.ones(NNN).astype(bool)
@@ -61,7 +61,7 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
     return L, K, nvoids
 
 ## TODO
-## testear velocidad con scipy cdist vs np.sqrt(...)
+## testear benchmark scipy.cdist vs np.sqrt(...)
 def get_halos(RMIN, RMAX,
               rv, xv, yv, zv):
 
@@ -140,15 +140,30 @@ def stacking(NCORES,
                 Li.T[1], Li.T[5], Li.T[6], Li.T[7],
             ]).T
 
-            j = 0
             with mp.Pool(processes=num) as pool:
-                for res in pool.imap(partial_profile_unpack, entrada):
-                    km = np.tile(K[i][j], (NBINS,1)).T
-                    j += 1
-                    mass  += np.tile(res[0], (nk+1,1))*km
-                    halos += np.tile(res[1], (nk+1,1))*km
-                    massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
-                    halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
+                resmap = pool.map(partial_profile_unpack, entrada)
+                pool.close()
+                pool.join()
+            
+            j = 0
+            for res in resmap:
+                km = np.tile(K[i][j], (NBINS,1)).T
+                j += 1
+                mass  += np.tile(res[0], (nk+1,1))*km
+                halos += np.tile(res[1], (nk+1,1))*km
+                massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
+                halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
+                
+                ### TODO
+                ## chequear que no haya competencia acá...
+                ## es mas seguro con la forma de forVoid_slice_MICE.py
+                # for res in pool.imap(partial_profile_unpack, entrada):
+                #     km = np.tile(K[i][j], (NBINS,1)).T
+                #     j += 1
+                #     mass  += np.tile(res[0], (nk+1,1))*km
+                #     halos += np.tile(res[1], (nk+1,1))*km
+                #     massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
+                #     halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
 
 
     meandenball   = (massball/(4*np.pi/3 * (5*RMAX)**3))
@@ -250,7 +265,7 @@ if __name__ == "__main__":
         tipo = 'A'
 
     # if (a.filename!='test') or (a.filename!='pru'):
-    a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
+    a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}_v2.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
 
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
