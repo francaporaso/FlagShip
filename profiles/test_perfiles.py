@@ -2,6 +2,8 @@ import numpy as np
 import multiprocessing as mp
 from astropy.io import fits
 
+from perfiles import lenscat_load, partial_profile, partial_profile_unpack
+
 a = {
     'NCORES':10,
     'RMIN':0.0, 'RMAX':5.0, 'NBINS':50,
@@ -20,20 +22,30 @@ else:
 a['filename'] = "radialprof_TEST.csv"
 
 
-with fits.open(a['tracname']) as f:
-    xhalo = f[1].data.xhalo
-    yhalo = f[1].data.yhalo
-    zhalo = f[1].data.zhalo
-    lmhalo = f[1].data.lmhalo
+def get_halos(RMIN, RMAX,
+              rv, xv, yv, zv):
 
-mparticle = 2.93e10 # Msun/h
-mask_particles = (lmhalo > np.log10(10*mparticle))
-xhalo = xhalo[mask_particles]
-yhalo = yhalo[mask_particles]
-zhalo = zhalo[mask_particles]
-lmhalo = lmhalo[mask_particles]
+    with fits.open(a['tracname']) as f:
+        xhalo = f[1].data.xhalo
+        yhalo = f[1].data.yhalo
+        zhalo = f[1].data.zhalo
+        lmhalo = f[1].data.lmhalo
 
-from perfiles import lenscat_load, get_halos, partial_profile, partial_profile_unpack
+    mparticle = 2.93e10 # Msun/h
+    mask_particles = (lmhalo > np.log10(10*mparticle))
+    xhalo = xhalo[mask_particles]
+    yhalo = yhalo[mask_particles]
+    zhalo = zhalo[mask_particles]
+    lmhalo = lmhalo[mask_particles]
+
+    distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2 ) / rv
+    mask_ball = (distance < 5*RMAX) & (distance >= 0.0)
+    mask_prof = (distance < RMAX) & (distance >= RMIN)
+
+    massball = np.sum(10.0 ** lmhalo[mask_ball])
+    halosball = len(lmhalo[mask_ball])
+
+    return lmhalo[mask_prof], distance[mask_prof], massball, halosball
 
 def perfiles_serie():
 
