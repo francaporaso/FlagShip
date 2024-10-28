@@ -119,10 +119,10 @@ def perfiles_paralelo():
                                 flag=a['flag'], lensname=a['lensname'],
                                 split=True, NSPLITS=a['NCORES'])
 
-    mass  = np.zeros(a['NBINS'])
-    halos = np.zeros(a['NBINS'])
-    massball  = 0.0
-    halosball = 0.0
+    mass  = np.zeros((50,a['NBINS']))
+    halos = np.zeros((50,a['NBINS']))
+    massball  = np.zeros(50)
+    halosball = np.zeros(50)
 
     ### TODO
     #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
@@ -153,14 +153,19 @@ def perfiles_paralelo():
                 pool.close()
                 pool.join()
             
-        for res in resmap:
-            mass  += res[0]
-            halos += res[1]
-            massball  += res[2]
-            halosball += res[3]
+        for j,res in enumerate(resmap):
+            mass[i*num+j] = res[0]
+            halos[i*num+j] = res[1]
+            massball[i*num+j]  = res[2]
+            halosball[i*num+j] = res[3]
 
         if i==4:
             break ## así agarro 50 voids (i=4 => 5 it del for externo => 10 voids/it* 5 it = 50 voids)
+
+    mass  = np.sum(mass, axis=0)
+    halos = np.sum(halos, axis=0)
+    massball  = np.sum(massball)
+    halosball = np.sum(halosball)
 
     meandenball   = (massball/(4*np.pi/3 * (5*a['RMAX'])**3))
     meanhalosball = (halosball/(4*np.pi/3 * (5*a['RMAX'])**3))
@@ -192,5 +197,5 @@ def perfiles_paralelo():
 
     return 0
 
-perfiles_serie()
+# perfiles_serie()
 perfiles_paralelo()
