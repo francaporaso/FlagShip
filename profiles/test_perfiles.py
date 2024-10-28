@@ -2,8 +2,6 @@ import numpy as np
 import multiprocessing as mp
 from astropy.io import fits
 
-from perfiles import lenscat_load, get_halos, partial_profile, partial_profile_unpack
-
 a = {
     'NCORES':10,
     'RMIN':0.0, 'RMAX':5.0, 'NBINS':50,
@@ -34,6 +32,8 @@ xhalo = xhalo[mask_particles]
 yhalo = yhalo[mask_particles]
 zhalo = zhalo[mask_particles]
 lmhalo = lmhalo[mask_particles]
+
+from perfiles import lenscat_load, get_halos, partial_profile, partial_profile_unpack
 
 def perfiles_serie():
 
