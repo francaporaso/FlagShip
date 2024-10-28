@@ -143,24 +143,24 @@ def stacking(NCORES,
                 pool.close()
                 pool.join()
             
-            j = 0
-            for res in resmap:
-                km = np.tile(K[i][j], (NBINS,1)).T
-                j += 1
-                mass  += np.tile(res[0], (nk+1,1))*km
-                halos += np.tile(res[1], (nk+1,1))*km
-                massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
-                halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
-                
-                ### TODO
-                ## chequear que no haya competencia acá...
-                ## es mas seguro con la forma de forVoid_slice_MICE.py
-                # for res in pool.imap(partial_profile_unpack, entrada):
-                #     km = np.tile(K[i][j], (NBINS,1)).T
-                #     j += 1
-                #     mass  += np.tile(res[0], (nk+1,1))*km
-                #     halos += np.tile(res[1], (nk+1,1))*km
-                #     massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
+        j = 0
+        for res in resmap:
+            km = np.tile(K[i][j], (NBINS,1)).T
+            j += 1
+            mass  += np.tile(res[0], (nk+1,1))*km
+            halos += np.tile(res[1], (nk+1,1))*km
+            massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
+            halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
+            
+            ### TODO
+            ## chequear que no haya competencia acá...
+            ## es mas seguro con la forma de forVoid_slice_MICE.py
+            # for res in pool.imap(partial_profile_unpack, entrada):
+            #     km = np.tile(K[i][j], (NBINS,1)).T
+            #     j += 1
+            #     mass  += np.tile(res[0], (nk+1,1))*km
+            #     halos += np.tile(res[1], (nk+1,1))*km
+            #     massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
                 #     halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
 
 

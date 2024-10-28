@@ -153,11 +153,11 @@ def perfiles_paralelo():
                 pool.close()
                 pool.join()
             
-            for res in resmap:
-                mass  += res[0]
-                halos += res[1]
-                massball  += res[2]
-                halosball += res[3]
+        for res in resmap:
+            mass  += res[0]
+            halos += res[1]
+            massball  += res[2]
+            halosball += res[3]
 
         if i==4:
             break ## así agarro 50 voids (i=4 => 5 it del for externo => 10 voids/it* 5 it = 50 voids)
