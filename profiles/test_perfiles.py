@@ -149,7 +149,7 @@ def perfiles_paralelo():
             print(Li.T[0])
 
             with mp.Pool(processes=num) as pool:
-                resmap = pool.map(partial_profile_unpack, entrada)
+                resmap = [pool.map(partial_profile_unpack, entrada)]
                 pool.close()
                 pool.join()
             
