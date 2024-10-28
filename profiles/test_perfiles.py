@@ -146,7 +146,7 @@ def perfiles_paralelo():
                 Li.T[1], Li.T[5], Li.T[6], Li.T[7],
             ]).T
 
-            print(Li[0])
+            print(Li.T[0])
 
             with mp.Pool(processes=num) as pool:
                 resmap = pool.map(partial_profile_unpack, entrada)
