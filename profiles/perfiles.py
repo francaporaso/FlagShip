@@ -151,17 +151,6 @@ def stacking(NCORES,
             halos += np.tile(res[1], (nk+1,1))*km
             massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
             halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
-            
-            ### TODO
-            ## chequear que no haya competencia acá...
-            ## es mas seguro con la forma de forVoid_slice_MICE.py
-            # for res in pool.imap(partial_profile_unpack, entrada):
-            #     km = np.tile(K[i][j], (NBINS,1)).T
-            #     j += 1
-            #     mass  += np.tile(res[0], (nk+1,1))*km
-            #     halos += np.tile(res[1], (nk+1,1))*km
-            #     massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
-                #     halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
 
 
     meandenball   = (massball/(4*np.pi/3 * (5*RMAX)**3))
@@ -184,10 +173,10 @@ def stacking(NCORES,
     DeltaHalosCum = np.zeros((nk+1, NBINS))
 
     for i in range(nk+1):
-        Delta[i,:]    = (mass[i]/vol)/meandenball[i] - 1
-        DeltaCum[i,:] = (np.cumsum(mass[i])/volcum)/meandenball[i] - 1
-        DeltaHalos[i,:]    = (halos[i]/vol)/meanhalosball[i] - 1
-        DeltaHalosCum[i,:] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
+        Delta[i]    = (mass[i]/vol)/meandenball[i] - 1
+        DeltaCum[i] = (np.cumsum(mass[i])/volcum)/meandenball[i] - 1
+        DeltaHalos[i]    = (halos[i]/vol)/meanhalosball[i] - 1
+        DeltaHalosCum[i] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
 
     ## calculating covariance matrix
     cov_delta    = cov_matrix(Delta[1:,:])
@@ -212,15 +201,7 @@ def stacking(NCORES,
     print("END!")
 
     return 0
-    ### ---------------------------------------------------------------TEST!
-    
-    # print('---------------------------------TEST!')
 
-    # np.savetxt('test_masa.csv', mass, delimiter=',')
-    # np.savetxt('test_halos.csv', halos, delimiter=',')
-    # np.savetxt('test_ball.csv', np.column_stack([massball, halosball]), delimiter=',')
-
-    # print("END!")
 
 if __name__ == "__main__":
 
@@ -263,7 +244,7 @@ if __name__ == "__main__":
         tipo = 'A'
 
     # if (a.filename!='test') or (a.filename!='pru'):
-    a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}_v2.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
+    a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
 
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
