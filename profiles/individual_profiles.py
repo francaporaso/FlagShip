@@ -2,7 +2,7 @@ import numpy as np
 import multiprocessing as mp
 from astropy.io import fits
 
-from perfiles import lenscat_load, partial_profile
+from perfiles import lenscat_load
 
 a = {
     'NCORES':10,
@@ -50,6 +50,22 @@ def get_halos(RMIN, RMAX,
 
     return logm, dist, massball, halosball
 
+def partial_profile(RMIN,RMAX,NBINS,
+                    rv, xv, yv, zv):
+    
+    NBINS = int(NBINS)
+    logm, distance, massball, halosball = get_halos(RMIN, RMAX, rv, xv, yv, zv)
+
+    NHalos = np.zeros(NBINS)
+    mass = np.zeros(NBINS)
+
+    DR = (RMAX-RMIN)/NBINS
+    for lm,d in zip(logm,distance):
+        ibin = np.floor((d-RMIN)/DR).astype(int)
+        NHalos[ibin] += 1.0
+        mass[ibin] += 10.0**lm
+
+    return mass, NHalos, massball, halosball
 
 L, _, _ = lenscat_load(a['Rv_min'], a['Rv_max'], a['z_min'], a['z_max'], a['rho1_min'], a['rho1_max'], a['rho2_min'], a['rho2_max'],
                         flag=a['flag'], lensname=a['lensname'],
