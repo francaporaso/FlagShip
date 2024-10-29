@@ -76,7 +76,7 @@ for i in range(N):
     name = f"void_py_{int(L[0,1])}.csv"
     np.savetxt(name, 
                np.column_stack(
-                   profs[0],profs[1],np.full(a['NBINS'],profs[2]),np.full(a['NBINS'],profs[3])
+                   [profs[0],profs[1],np.full(a['NBINS'],profs[2]),np.full(a['NBINS'],profs[3])]
                    ), 
                 delimiter=','
             )
