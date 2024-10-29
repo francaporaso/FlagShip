@@ -7,7 +7,7 @@ from perfiles import lenscat_load
 a = {
     'NCORES':10,
     'RMIN':0.0, 'RMAX':5.0, 'NBINS':50,
-    'Rv_min':6.0, 'Rv_max':9.622, 'z_min':0.2, 'z_max':0.4, 'rho1_min':-1.0, 'rho1_max':-0.8, 'rho2_min':-1.0, 'rho2_max':100.0,
+    'Rv_min':10.0, 'Rv_max':12.0, 'z_min':0.2, 'z_max':0.3, 'rho1_min':-1.0, 'rho1_max':-0.8, 'rho2_min':-1.0, 'rho2_max':100.0,
     'flag':2.0,
     'filename':'test', 'lensname':'server', 'tracname':'server',
 }
@@ -78,7 +78,8 @@ def perfiles_serie():
     massball  = 0.0
     halosball = 0.0
 
-    profs = [partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,i], L[5,i], L[6,i], L[7,i]) for i in range(10)]
+    # profs = [partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,i], L[5,i], L[6,i], L[7,i]) for i in range(10)]
+    profs = partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,0], L[5,0], L[6,0], L[7,0])
 
     for res in profs:
         mass  += res[0]
