@@ -2,6 +2,7 @@ import numpy as np
 import multiprocessing as mp
 from astropy.io import fits
 from tqdm import tqdm
+# from numba import njit, jit
 
 def cov_matrix(array):
         
@@ -60,9 +61,11 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
 
     return L, K, nvoids
 
+# @njit
 def get_halos(RMIN, RMAX,
               rv, xv, yv, zv):
 
+    global xhalo, yhalo, zhalo, lmhalo
     distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2 ) / rv
     mask_ball = (distance < 5*RMAX) & (distance >= 0.0)
     mask_prof = (distance < RMAX) & (distance >= RMIN)
@@ -70,7 +73,10 @@ def get_halos(RMIN, RMAX,
     massball = np.sum(10.0 ** lmhalo[mask_ball])
     halosball = len(lmhalo[mask_ball])
 
-    return lmhalo[mask_prof], distance[mask_prof], massball, halosball
+    logm = lmhalo[mask_prof]
+    dist = distance[mask_prof]
+
+    return logm, dist, massball, halosball
 
 ## TODO
 ## agregar solucion a edgecases cuando el perfil se escapa de la caja
@@ -85,7 +91,7 @@ def partial_profile(RMIN,RMAX,NBINS,
 
     DR = (RMAX-RMIN)/NBINS
     for lm,d in zip(logm,distance):
-        ibin = np.floor((d-RMIN)/DR).astype(int)
+        ibin = int(np.floor((d-RMIN)/DR))
         NHalos[ibin] += 1.0
         mass[ibin] += 10.0**lm
 
@@ -243,8 +249,8 @@ if __name__ == "__main__":
     else:
         tipo = 'A'
 
-    # if (a.filename!='test') or (a.filename!='pru'):
-    a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
+    if (a.filename!='test'):
+        a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
 
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
