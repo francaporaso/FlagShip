@@ -73,7 +73,7 @@ L, _, _ = lenscat_load(a['Rv_min'], a['Rv_max'], a['z_min'], a['z_max'], a['rho1
 N = 10
 for i in range(N):
     profs = partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,i], L[5,i], L[6,i], L[7,i])
-    name = f"void_py_{int(L[0,1])}.csv"
+    name = f"void_py_{int(L[0,i])}.csv"
     np.savetxt(name, 
                np.column_stack(
                    [profs[0],profs[1],np.full(a['NBINS'],profs[2]),np.full(a['NBINS'],profs[3])]
