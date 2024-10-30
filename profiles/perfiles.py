@@ -117,14 +117,15 @@ def stacking(NCORES,
     if nvoids < NCORES:
             NCORES = nvoids
 
-    mass_v  = np.zeros((nvoids,nk+1,NBINS))
-    halos = np.zeros((nk+1,NBINS))
-    massball  = np.zeros(nk+1)
-    halosball = np.zeros(nk+1)
+    # mass  = np.zeros((nk+1,NBINS))
+    # halos = np.zeros((nk+1,NBINS))
+    # massball  = np.zeros(nk+1)
+    # halosball = np.zeros(nk+1)
 
-    mball = np.zeros(nvoids)
-    nhball = np.zeros(nvoids)
-    voidsid = np.zeros(nvoids)
+    mass  = np.zeros(NBINS)
+    halos  = np.zeros(NBINS)
+    massball  = 0.0
+    halosball  = 0.0
 
     ### TODO
     #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
@@ -163,16 +164,10 @@ def stacking(NCORES,
         #     j += 1
 
         for j,res in enumerate(resmap):
-            voidsid[i*num+j] = Li[j][0]
-            mball[i*num+j] = res[2]
-            nhball[i*num+j] = res[3]
-
-    print("test: masa en la bola")
-    np.savetxt(f"halosball_{nvoids}.csv", np.column_stack([voidsid, mball, nhball]),delimiter=',')
-    
-    return 1
-
-    mass = np.sum(mass_v, axis=0)
+            mass += res[0]
+            halos += res[1]
+            massball += res[2]
+            halosball += res[3]
 
     meandenball   = (massball/(4*np.pi/3 * (5*RMAX)**3))
     meanhalosball = (halosball/(4*np.pi/3 * (5*RMAX)**3))
@@ -181,10 +176,14 @@ def stacking(NCORES,
     
     vol    = np.zeros(NBINS)
     volcum = np.zeros(NBINS)
-    for k in range(NBINS):
-        vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
-        volcum[k] = ((k+1.0)*DR + RMIN)**3
+    # for k in range(NBINS):
+    #     vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
+    #     volcum[k] = ((k+1.0)*DR + RMIN)**3
     
+    for k in range(1,NBINS+1):
+        vol[k]    = (k*DR + RMIN)**3 - ((k-1)*DR + RMIN)**3
+        volcum[k] = (k*DR + RMIN)**3
+
     vol    *= (4*np.pi/3)
     volcum *= (4*np.pi/3)
 
@@ -200,10 +199,10 @@ def stacking(NCORES,
         DeltaHalosCum[i] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
 
     ## calculating covariance matrix
-    cov_delta    = cov_matrix(Delta[1:,:])
-    cov_deltacum = cov_matrix(DeltaCum[1:,:])
-    cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
-    cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
+    # cov_delta    = cov_matrix(Delta[1:,:])
+    # cov_deltacum = cov_matrix(DeltaCum[1:,:])
+    # cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
+    # cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
 
     print(f"Saving in: {filename}")
     print(f"Saving in: {'cov_delta'+filename}")
@@ -214,10 +213,10 @@ def stacking(NCORES,
     # Stack the arrays column-wise and save
     data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
     np.savetxt(filename, data, delimiter=',')
-    np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
-    np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
-    np.savetxt('cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
-    np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
+    # np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
+    # np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
+    # np.savetxt('cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
+    # np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
 
     print("END!")
 
