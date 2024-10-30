@@ -189,6 +189,11 @@ def averaging(NCORES,
             DeltaHalosCum += np.tile(res[3], (nk+1,1))*km
             j+=1
 
+    Delta    /= nvoids
+    DeltaCum /= nvoids
+    DeltaHalos    /= nvoids
+    DeltaHalosCum /= nvoids
+
     # calculating covariance matrix
     cov_delta    = cov_matrix(Delta[1:,:])
     cov_deltacum = cov_matrix(DeltaCum[1:,:])
