@@ -117,7 +117,7 @@ def stacking(NCORES,
     if nvoids < NCORES:
             NCORES = nvoids
 
-    mass  = np.zeros((nk+1,NBINS))
+    mass_v  = np.zeros((nvoids,nk+1,NBINS))
     halos = np.zeros((nk+1,NBINS))
     massball  = np.zeros(nk+1)
     halosball = np.zeros(nk+1)
@@ -152,12 +152,13 @@ def stacking(NCORES,
         j = 0
         for res in resmap:
             km = np.tile(K[i][j], (NBINS,1)).T
-            j += 1
-            mass  += np.tile(res[0], (nk+1,1))*km
+            mass_v[i*num+j]  = np.tile(res[0], (nk+1,1))*km
             halos += np.tile(res[1], (nk+1,1))*km
             massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
             halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
+            j += 1
 
+    mass = np.sum(mass_v, axis=0)
 
     meandenball   = (massball/(4*np.pi/3 * (5*RMAX)**3))
     meanhalosball = (halosball/(4*np.pi/3 * (5*RMAX)**3))
