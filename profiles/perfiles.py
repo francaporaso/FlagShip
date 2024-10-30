@@ -250,7 +250,11 @@ if __name__ == "__main__":
         tipo = 'A'
 
     if (a.filename!='test'):
-        a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}.csv".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
+        a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
+    a.filename += '.csv'
+
+    print(a.filename)
+    assert False
 
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
