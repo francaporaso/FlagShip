@@ -124,6 +124,7 @@ def stacking(NCORES,
 
     mball = np.zeros(nvoids)
     nhball = np.zeros(nvoids)
+    voidsid = np.zeros(nvoids)
 
     ### TODO
     #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
@@ -162,11 +163,12 @@ def stacking(NCORES,
         #     j += 1
 
         for j,res in enumerate(resmap):
+            voidsid[i*num+j] = Li[j][0]
             mball[i*num+j] = res[2]
             nhball[i*num+j] = res[3]
 
     print("test: masa en la bola")
-    np.savetxt(f"halosball_{nvoids}.csv", np.column_stack([mball, nhball]),delimiter=',')
+    np.savetxt(f"halosball_{nvoids}.csv", np.column_stack([voidsid, mball, nhball]),delimiter=',')
     
     return 1
 
