@@ -100,6 +100,118 @@ def partial_profile(RMIN,RMAX,NBINS,
 def partial_profile_unpack(myinput):
     return partial_profile(*myinput)
 
+def individual_profile(RMIN, RMAX, NBINS,
+                       rv, xv, yv, zv):
+    
+    mass, halos, massball, halosball = partial_profile(RMIN, RMAX, NBINS, rv, xv, yv, zv)
+    
+    meandenball = massball/(4/3*np.pi * (5*RMAX*rv)**3)
+    meanhalosball = halosball/(4/3*np.pi * (5*RMAX*rv)**3)
+
+    DR = (RMAX-RMIN)/NBINS
+    
+    vol    = np.zeros(NBINS)
+    volcum = np.zeros(NBINS)
+    for k in range(NBINS):
+        vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
+        volcum[k] = ((k+1.0)*DR + RMIN)**3
+
+    vol    *= 4/3*np.pi * rv**3
+    volcum *= 4/3*np.pi * rv**3
+
+    Delta    = (mass/vol)/meandenball - 1
+    DeltaCum = (np.cumsum(mass)/volcum)/meandenball - 1
+    DeltaHalos    = (halos/vol)/meanhalosball - 1
+    DeltaHalosCum = (np.cumsum(halos)/volcum)/meanhalosball - 1
+
+    return Delta, DeltaCum, DeltaHalos, DeltaHalosCum
+
+def individual_profile_unpack(myinput):
+    return individual_profile(*myinput)
+
+
+## TODO
+## cambiar guardado en .csv por .fits
+def averaging(NCORES, 
+              RMIN, RMAX, NBINS,
+              Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
+              flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat", filename="pru_stack.csv"):
+
+    nk = 100
+    L, K, nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
+                                flag=flag, lensname=lensname,
+                                split=True, NSPLITS=NCORES)
+
+    print(f"NVOIDS: .... {nvoids}")
+
+    if nvoids < NCORES:
+            NCORES = nvoids
+
+    Delta    = np.zeros((nk+1,NBINS))
+    DeltaCum = np.zeros((nk+1,NBINS))
+    DeltaHalos    = np.zeros((nk+1,NBINS))
+    DeltaHalosCum = np.zeros((nk+1,NBINS))
+
+    ### TODO
+    #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
+    for i,Li in enumerate(tqdm(L)):
+
+        num = len(Li)
+        if num==1:
+            entrada = np.array([
+                RMIN, RMAX, NBINS,
+                Li[0][1], Li[0][5], Li[0][6], Li[0][7],
+            ])
+            
+            resmap = individual_profile(*entrada)
+
+        else:
+            RMIN_a = np.full(num, RMIN)
+            RMAX_a = np.full(num, RMAX)
+            NBINS_a = np.full(num, NBINS)
+            entrada = np.array([
+                RMIN_a, RMAX_a, NBINS_a, 
+                Li.T[1], Li.T[5], Li.T[6], Li.T[7],
+            ]).T
+
+            with mp.Pool(processes=num) as pool:
+                resmap = pool.map(individual_profile_unpack, entrada)
+                pool.close()
+                pool.join()
+            
+        j = 0
+        for res in resmap:
+            km = np.tile(K[i][j], (NBINS,1)).T
+            Delta    += np.tile(res[0], (nk+1,1))*km
+            DeltaCum += np.tile(res[1], (nk+1,1))*km
+            DeltaHalos    += np.tile(res[2], (nk+1,1))*km
+            DeltaHalosCum += np.tile(res[3], (nk+1,1))*km
+            j+=1
+
+    # calculating covariance matrix
+    cov_delta    = cov_matrix(Delta[1:,:])
+    cov_deltacum = cov_matrix(DeltaCum[1:,:])
+    cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
+    cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
+
+    print(f"Saving in: {filename}")
+    print(f"Saving in: {'cov_delta'+filename}")
+    print(f"Saving in: {'cov_deltacum'+filename}")
+    print(f"Saving in: {'cov_deltahalos'+filename}")
+    print(f"Saving in: {'cov_deltahaloscum'+filename}")
+
+    # Stack the arrays column-wise and save
+    data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
+    np.savetxt(filename, data, delimiter=',')
+    np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
+    np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
+    np.savetxt('cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
+    np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
+
+    print("END!")
+
+    return 0
+
 ## TODO
 ## cambiar guardado en .csv por .fits
 def stacking(NCORES, 
@@ -117,15 +229,10 @@ def stacking(NCORES,
     if nvoids < NCORES:
             NCORES = nvoids
 
-    # mass  = np.zeros((nk+1,NBINS))
-    # halos = np.zeros((nk+1,NBINS))
-    # massball  = np.zeros(nk+1)
-    # halosball = np.zeros(nk+1)
-
-    mass  = np.zeros(NBINS)
-    halos  = np.zeros(NBINS)
-    massball  = 0.0
-    halosball  = 0.0
+    mass  = np.zeros((nk+1,NBINS))
+    halos = np.zeros((nk+1,NBINS))
+    massball  = np.zeros(nk+1)
+    halosball = np.zeros(nk+1)
 
     ### TODO
     #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
@@ -154,61 +261,52 @@ def stacking(NCORES,
                 pool.close()
                 pool.join()
             
-        # j = 0
-        # for res in resmap:
-        #     km = np.tile(K[i][j], (NBINS,1)).T
-        #     mass_v[i*num+j]  = np.tile(res[0], (nk+1,1))*km
-        #     halos += np.tile(res[1], (nk+1,1))*km
-        #     massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
-        #     halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
-        #     j += 1
+        j = 0
+        for res in resmap:
+            km = np.tile(K[i][j], (NBINS,1)).T
+            
+            mass  += np.tile(res[0], (nk+1,1))*km
+            halos += np.tile(res[1], (nk+1,1))*km
+            massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
+            halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
+            j += 1
 
-        for j,res in enumerate(resmap):
-            mass += res[0]
-            halos += res[1]
-            massball += res[2]
-            halosball += res[3]
-
-    meandenball   = (massball/(4*np.pi/3 * (5*RMAX)**3))
-    meanhalosball = (halosball/(4*np.pi/3 * (5*RMAX)**3))
+    meandenball = massball/(4/3*np.pi * (5*RMAX)**3)
+    meanhalosball = halosball/(4/3*np.pi * (5*RMAX)**3)
 
     DR = (RMAX-RMIN)/NBINS
     
     vol    = np.zeros(NBINS)
     volcum = np.zeros(NBINS)
-    # for k in range(NBINS):
-    #     vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
-    #     volcum[k] = ((k+1.0)*DR + RMIN)**3
+    for k in range(NBINS):
+        vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
+        volcum[k] = ((k+1.0)*DR + RMIN)**3
     
-    for k in range(1,NBINS+1):
-        vol[k-1]    = ((k+1)*DR + RMIN)**3 - (k*DR + RMIN)**3
-        volcum[k-1] = ((k+1)*DR + RMIN)**3
+    ### Volumen incorrecto... está asignando el vol del bin k y dsp lo divide con la masa del bin k-1
+    ### sin embargo, así da un perfil decente....
+    # for k in range(1,NBINS+1):
+    #     vol[k-1]    = ((k+1)*DR + RMIN)**3 - (k*DR + RMIN)**3
+    #     volcum[k-1] = ((k+1)*DR + RMIN)**3
 
     vol    *= (4*np.pi/3)
     volcum *= (4*np.pi/3)
 
-    # Delta    = np.zeros((nk+1, NBINS))
-    # DeltaCum = np.zeros((nk+1, NBINS))
-    # DeltaHalos    = np.zeros((nk+1, NBINS))
-    # DeltaHalosCum = np.zeros((nk+1, NBINS))
+    Delta    = np.zeros((nk+1, NBINS))
+    DeltaCum = np.zeros((nk+1, NBINS))
+    DeltaHalos    = np.zeros((nk+1, NBINS))
+    DeltaHalosCum = np.zeros((nk+1, NBINS))
 
-    # for i in range(nk+1):
-    #     Delta[i]    = (mass[i]/vol)/meandenball[i] - 1
-    #     DeltaCum[i] = (np.cumsum(mass[i])/volcum)/meandenball[i] - 1
-    #     DeltaHalos[i]    = (halos[i]/vol)/meanhalosball[i] - 1
-    #     DeltaHalosCum[i] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
+    for i in range(nk+1):
+        Delta[i]    = (mass[i]/vol)/meandenball[i] - 1
+        DeltaCum[i] = (np.cumsum(mass[i])/volcum)/meandenball[i] - 1
+        DeltaHalos[i]    = (halos[i]/vol)/meanhalosball[i] - 1
+        DeltaHalosCum[i] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
 
-    Delta = mass/vol/meandenball - 1
-    DeltaCum = np.cumsum(mass)/volcum/meandenball - 1
-    DeltaHalos = halos/vol/meanhalosball - 1
-    DeltaHalosCum = np.cumsum(halos)/volcum/meanhalosball - 1
-
-
-    ## calculating covariance matrix
-    # cov_delta    = cov_matrix(Delta[1:,:])
-    # cov_deltacum = cov_matrix(DeltaCum[1:,:])
-    # cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
-    # cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
+    # calculating covariance matrix
+    cov_delta    = cov_matrix(Delta[1:,:])
+    cov_deltacum = cov_matrix(DeltaCum[1:,:])
+    cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
+    cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
 
     print(f"Saving in: {filename}")
     print(f"Saving in: {'cov_delta'+filename}")
@@ -271,7 +369,7 @@ if __name__ == "__main__":
         tipo = 'A'
 
     if (a.filename[:4] !='test'):
-        a.filename = "radialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
+        a.filename = "averageradialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
     a.filename += '.csv'
 
     ## opening tracers file and general masking
@@ -288,13 +386,21 @@ if __name__ == "__main__":
     zhalo = zhalo[mask_particles]
     lmhalo = lmhalo[mask_particles] - 12
 
-    stacking(
+    averaging(
         a.NCORES, 
         a.RMIN, a.RMAX, a.NBINS,
         a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max,
         flag=a.flag, lensname=a.lensname,
         filename=a.filename,
     )
+
+    # stacking(
+    #     a.NCORES, 
+    #     a.RMIN, a.RMAX, a.NBINS,
+    #     a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max,
+    #     flag=a.flag, lensname=a.lensname,
+    #     filename=a.filename,
+    # )
 
     # NCORES = 100
     # RMIN, RMAX, NBINS = 0.0, 5.0, 50
