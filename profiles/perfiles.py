@@ -181,8 +181,8 @@ def stacking(NCORES,
     #     volcum[k] = ((k+1.0)*DR + RMIN)**3
     
     for k in range(1,NBINS+1):
-        vol[k]    = (k*DR + RMIN)**3 - ((k-1)*DR + RMIN)**3
-        volcum[k] = (k*DR + RMIN)**3
+        vol[k-1]    = (k*DR + RMIN)**3 - ((k-1)*DR + RMIN)**3
+        volcum[k-1] = (k*DR + RMIN)**3
 
     vol    *= (4*np.pi/3)
     volcum *= (4*np.pi/3)
