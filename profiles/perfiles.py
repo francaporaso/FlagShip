@@ -122,6 +122,9 @@ def stacking(NCORES,
     massball  = np.zeros(nk+1)
     halosball = np.zeros(nk+1)
 
+    mball = np.zeros(nvoids)
+    nhball = np.zeros(nvoids)
+
     ### TODO
     #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
     for i,Li in enumerate(tqdm(L)):
@@ -149,14 +152,23 @@ def stacking(NCORES,
                 pool.close()
                 pool.join()
             
-        j = 0
-        for res in resmap:
-            km = np.tile(K[i][j], (NBINS,1)).T
-            mass_v[i*num+j]  = np.tile(res[0], (nk+1,1))*km
-            halos += np.tile(res[1], (nk+1,1))*km
-            massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
-            halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
-            j += 1
+        # j = 0
+        # for res in resmap:
+        #     km = np.tile(K[i][j], (NBINS,1)).T
+        #     mass_v[i*num+j]  = np.tile(res[0], (nk+1,1))*km
+        #     halos += np.tile(res[1], (nk+1,1))*km
+        #     massball  += (np.tile(res[2], (nk+1,1))*km)[:,0]
+        #     halosball += (np.tile(res[3], (nk+1,1))*km)[:,0]
+        #     j += 1
+
+        for j,res in enumerate(resmap):
+            mball[i*num+j] = res[2]
+            nhball[i*num+j] = res[3]
+
+    print("test: masa en la bola")
+    np.savetxt(f"halosball_{nvoids}.csv", np.column_stack([mball, nhball]),delimiter=',')
+    
+    return 1
 
     mass = np.sum(mass_v, axis=0)
 
