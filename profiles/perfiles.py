@@ -265,7 +265,7 @@ if __name__ == "__main__":
     xhalo = xhalo[mask_particles]
     yhalo = yhalo[mask_particles]
     zhalo = zhalo[mask_particles]
-    lmhalo = lmhalo[mask_particles]
+    lmhalo = lmhalo[mask_particles] - 12
 
     stacking(
         a.NCORES, 
