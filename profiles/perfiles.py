@@ -199,9 +199,9 @@ def stacking(NCORES,
     #     DeltaHalosCum[i] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
 
     Delta = mass/vol/meandenball - 1
-    DeltaCum = np.cumsum(mass)/vol/meandenball - 1
-    DeltaHalos = halos/vol/meandenball - 1
-    DeltaHalosCum = np.cumsum(halos)/vol/meandenball - 1
+    DeltaCum = np.cumsum(mass)/volcum/meandenball - 1
+    DeltaHalos = halos/vol/meanhalosball - 1
+    DeltaHalosCum = np.cumsum(halos)/volcum/meanhalosball - 1
 
 
     ## calculating covariance matrix
