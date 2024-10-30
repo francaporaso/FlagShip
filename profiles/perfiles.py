@@ -103,6 +103,7 @@ def partial_profile_unpack(myinput):
 def individual_profile(RMIN, RMAX, NBINS,
                        rv, xv, yv, zv):
     
+    NBINS = int(NBINS)
     mass, halos, massball, halosball = partial_profile(RMIN, RMAX, NBINS, rv, xv, yv, zv)
     
     meandenball = massball/(4/3*np.pi * (5*RMAX*rv)**3)
