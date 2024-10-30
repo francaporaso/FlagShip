@@ -130,7 +130,7 @@ def stacking(NCORES,
         if num==1:
             entrada = np.array([
                 RMIN, RMAX, NBINS,
-                Li[1], Li[5], Li[6], Li[7],
+                Li[0][1], Li[0][5], Li[0][6], Li[0][7],
             ])
             
             resmap = partial_profile(*entrada)
