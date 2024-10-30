@@ -187,16 +187,22 @@ def stacking(NCORES,
     vol    *= (4*np.pi/3)
     volcum *= (4*np.pi/3)
 
-    Delta    = np.zeros((nk+1, NBINS))
-    DeltaCum = np.zeros((nk+1, NBINS))
-    DeltaHalos    = np.zeros((nk+1, NBINS))
-    DeltaHalosCum = np.zeros((nk+1, NBINS))
+    # Delta    = np.zeros((nk+1, NBINS))
+    # DeltaCum = np.zeros((nk+1, NBINS))
+    # DeltaHalos    = np.zeros((nk+1, NBINS))
+    # DeltaHalosCum = np.zeros((nk+1, NBINS))
 
-    for i in range(nk+1):
-        Delta[i]    = (mass[i]/vol)/meandenball[i] - 1
-        DeltaCum[i] = (np.cumsum(mass[i])/volcum)/meandenball[i] - 1
-        DeltaHalos[i]    = (halos[i]/vol)/meanhalosball[i] - 1
-        DeltaHalosCum[i] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
+    # for i in range(nk+1):
+    #     Delta[i]    = (mass[i]/vol)/meandenball[i] - 1
+    #     DeltaCum[i] = (np.cumsum(mass[i])/volcum)/meandenball[i] - 1
+    #     DeltaHalos[i]    = (halos[i]/vol)/meanhalosball[i] - 1
+    #     DeltaHalosCum[i] = (np.cumsum(halos[i])/volcum)/meanhalosball[i] - 1
+
+    Delta = mass/vol/meandenball - 1
+    DeltaCum = np.cumsum(mass)/vol/meandenball - 1
+    DeltaHalos = halos/vol/meandenball - 1
+    DeltaHalosCum = np.cumsum(halos)/vol/meandenball - 1
+
 
     ## calculating covariance matrix
     # cov_delta    = cov_matrix(Delta[1:,:])
@@ -211,7 +217,8 @@ def stacking(NCORES,
     print(f"Saving in: {'cov_deltahaloscum'+filename}")
 
     # Stack the arrays column-wise and save
-    data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
+    # data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
+    data = np.column_stack((Delta, DeltaCum, DeltaHalos, DeltaHalosCum))
     np.savetxt(filename, data, delimiter=',')
     # np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
     # np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
