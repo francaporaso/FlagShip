@@ -375,15 +375,10 @@ if __name__ == "__main__":
     else:
         tipo = 'A'
 
-    print(a.filename)
-
     if (a.filename[:4] !='test'):
         a.filename = "averageradialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
     a.filename += '.csv'
 
-    print(a.filename)
-    assert False
-    
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
         xhalo = f[1].data.xhalo
