@@ -208,7 +208,7 @@ def averaging(NCORES,
     print(f"Saving in: {'cov_deltahaloscum'+filename}")
 
     # Stack the arrays column-wise and save
-    data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
+    data = np.column_stack((Delta_m[0], DeltaCum_m[0], DeltaHalos_m[0], DeltaHalosCum_m[0]))
     np.savetxt(folder+filename, data, delimiter=',')
     np.savetxt(folder+'cov_delta'+filename, cov_delta, delimiter=',')
     np.savetxt(folder+'cov_deltacum'+filename, cov_deltacum, delimiter=',')
