@@ -383,7 +383,7 @@ if __name__ == "__main__":
 
     print(a.filename)
     assert False
-
+    
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
         xhalo = f[1].data.xhalo
