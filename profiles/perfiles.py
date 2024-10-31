@@ -200,6 +200,7 @@ def averaging(NCORES,
     cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
     cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
 
+    folder = "home/fcaporaso/FlagShip/profiles/results/"
     print(f"Saving in: {filename}")
     print(f"Saving in: {'cov_delta'+filename}")
     print(f"Saving in: {'cov_deltacum'+filename}")
@@ -208,11 +209,11 @@ def averaging(NCORES,
 
     # Stack the arrays column-wise and save
     data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
-    np.savetxt(filename, data, delimiter=',')
-    np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
-    np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
-    np.savetxt('cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
-    np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
+    np.savetxt(folder+filename, data, delimiter=',')
+    np.savetxt(folder+'cov_delta'+filename, cov_delta, delimiter=',')
+    np.savetxt(folder+'cov_deltacum'+filename, cov_deltacum, delimiter=',')
+    np.savetxt(folder+'cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
+    np.savetxt(folder+'cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
 
     print("END!")
 
@@ -324,10 +325,10 @@ def stacking(NCORES,
     # data = np.column_stack((Delta[0], DeltaCum[0], DeltaHalos[0], DeltaHalosCum[0]))
     data = np.column_stack((Delta, DeltaCum, DeltaHalos, DeltaHalosCum))
     np.savetxt(filename, data, delimiter=',')
-    # np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
-    # np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
-    # np.savetxt('cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
-    # np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
+    np.savetxt('cov_delta'+filename, cov_delta, delimiter=',')
+    np.savetxt('cov_deltacum'+filename, cov_deltacum, delimiter=',')
+    np.savetxt('cov_deltahalos'+filename, cov_deltahalos, delimiter=',')
+    np.savetxt('cov_deltahaloscum'+filename, cov_deltahaloscum, delimiter=',')
 
     print("END!")
 
@@ -374,9 +375,14 @@ if __name__ == "__main__":
     else:
         tipo = 'A'
 
+    print(a.filename)
+
     if (a.filename[:4] !='test'):
         a.filename = "averageradialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
     a.filename += '.csv'
+
+    print(a.filename)
+    assert False
 
     ## opening tracers file and general masking
     with fits.open(a.tracname) as f:
