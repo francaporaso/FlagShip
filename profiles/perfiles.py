@@ -148,10 +148,10 @@ def averaging(NCORES,
     if nvoids < NCORES:
             NCORES = nvoids
 
-    Delta    = np.zeros((nk+1,NBINS))
-    DeltaCum = np.zeros((nk+1,NBINS))
-    DeltaHalos    = np.zeros((nk+1,NBINS))
-    DeltaHalosCum = np.zeros((nk+1,NBINS))
+    Delta    = np.zeros((nvoids, nk+1,NBINS))
+    DeltaCum = np.zeros((nvoids, nk+1,NBINS))
+    DeltaHalos    = np.zeros((nvoids, nk+1,NBINS))
+    DeltaHalosCum = np.zeros((nvoids, nk+1,NBINS))
 
     ### TODO
     #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
@@ -180,27 +180,27 @@ def averaging(NCORES,
                 pool.close()
                 pool.join()
             
-        j = 0
-        for res in resmap:
+        for j,res in enumerate(resmap):
             km = np.tile(K[i][j], (NBINS,1)).T
-            Delta    += np.tile(res[0], (nk+1,1))*km
-            DeltaCum += np.tile(res[1], (nk+1,1))*km
-            DeltaHalos    += np.tile(res[2], (nk+1,1))*km
-            DeltaHalosCum += np.tile(res[3], (nk+1,1))*km
-            j+=1
+            Delta[i*num+j]    = np.tile(res[0], (nk+1,1))*km
+            DeltaCum[i*num+j] = np.tile(res[1], (nk+1,1))*km
+            DeltaHalos[i*num+j]    = np.tile(res[2], (nk+1,1))*km
+            DeltaHalosCum[i*num+j] = np.tile(res[3], (nk+1,1))*km
 
-    Delta    /= nvoids
-    DeltaCum /= nvoids
-    DeltaHalos    /= nvoids
-    DeltaHalosCum /= nvoids
+    ## TODO
+    ## guardar los individuales... 
+    Delta_m    = np.mean(Delta, axis=0)
+    DeltaCum_m = np.mean(DeltaCum, axis=0)
+    DeltaHalos_m    = np.mean(DeltaHalos, axis=0)
+    DeltaHalosCum_m = np.mean(DeltaHalosCum, axis=0)
 
     # calculating covariance matrix
-    cov_delta    = cov_matrix(Delta[1:,:])
-    cov_deltacum = cov_matrix(DeltaCum[1:,:])
-    cov_deltahalos    = cov_matrix(DeltaHalos[1:,:])
-    cov_deltahaloscum = cov_matrix(DeltaHalosCum[1:,:])
+    cov_delta    = cov_matrix(Delta_m[1:,:])
+    cov_deltacum = cov_matrix(DeltaCum_m[1:,:])
+    cov_deltahalos    = cov_matrix(DeltaHalos_m[1:,:])
+    cov_deltahaloscum = cov_matrix(DeltaHalosCum_m[1:,:])
 
-    folder = "home/fcaporaso/FlagShip/profiles/results/"
+    folder = '/home/fcaporaso/FlagShip/profiles/results/'
     print(f"Saving in: {filename}")
     print(f"Saving in: {'cov_delta'+filename}")
     print(f"Saving in: {'cov_deltacum'+filename}")
