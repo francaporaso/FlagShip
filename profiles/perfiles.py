@@ -200,7 +200,7 @@ def averaging(NCORES,
     cov_deltahalos    = cov_matrix(DeltaHalos_m[1:,:])
     cov_deltahaloscum = cov_matrix(DeltaHalosCum_m[1:,:])
 
-    folder = '/home/fcaporaso/FlagShip/profiles/results/'
+    folder = 'home/fcaporaso/FlagShip/profiles/results/'
     print(f"Saving in: {filename}")
     print(f"Saving in: {'cov_delta'+filename}")
     print(f"Saving in: {'cov_deltacum'+filename}")
