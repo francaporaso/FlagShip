@@ -117,7 +117,7 @@ def partial_profile2(RMIN,RMAX,NBINS,
 
     vol = np.array([((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3 for k in range(NBINS)]) * rv**3
         
-    return mass, NHalos, massball, halosball, vol, np.full(NBINS, vid)
+    return mass, NHalos, np.full(NBINS,massball), np.full(NBINS,halosball), vol, np.full(NBINS, vid)
 
 def partial_profile_unpack(myinput):
     return partial_profile(*myinput)
