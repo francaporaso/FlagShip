@@ -83,7 +83,7 @@ def get_halos(RMIN, RMAX,
 ## TODO
 ## agregar solucion a edgecases cuando el perfil se escapa de la caja
 def partial_profile(RMIN,RMAX,NBINS,
-                    rv, xv, yv, zv):
+                    rv, xv, yv, zv, vid):
     
     NBINS = int(NBINS)
     logm, distance, massball, halosball = get_halos(RMIN, RMAX, rv, xv, yv, zv)
@@ -97,10 +97,33 @@ def partial_profile(RMIN,RMAX,NBINS,
         NHalos[ibin] += 1.0
         mass[ibin] += 10.0**lm
 
-    return mass, NHalos, massball, halosball
+    return mass, NHalos, massball, halosball, np.full(NBINS, vid)
+
+def partial_profile2(RMIN,RMAX,NBINS,
+                    rv, xv, yv, zv, 
+                    vid):
+    
+    NBINS = int(NBINS)
+    logm, distance, massball, halosball = get_halos(RMIN, RMAX, rv, xv, yv, zv)
+
+    NHalos = np.zeros(NBINS)
+    mass = np.zeros(NBINS)
+
+    DR = (RMAX-RMIN)/NBINS
+    for lm,d in zip(logm,distance):
+        ibin = int(np.floor((d-RMIN)/DR))
+        NHalos[ibin] += 1.0
+        mass[ibin] += 10.0**lm
+
+    vol = np.array([((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3 for k in range(NBINS)])
+        
+    return mass, NHalos, massball, halosball, vol, np.full(NBINS, vid)
 
 def partial_profile_unpack(myinput):
     return partial_profile(*myinput)
+
+def partial_profile_unpack2(myinput):
+    return partial_profile2(*myinput)
 
 def individual_profile(RMIN, RMAX, NBINS,
                        rv, xv, yv, zv, vid):
@@ -349,10 +372,10 @@ def all_individuals(NCORES,
         if num==1:
             entrada = np.array([
                 RMIN, RMAX, NBINS,
-                Li[0][1], Li[0][5], Li[0][6], Li[0][7],
+                Li[0][1], Li[0][5], Li[0][6], Li[0][7], Li[0][0],
             ])
             
-            resmap = individual_profile(*entrada)
+            resmap = partial_profile(*entrada)
 
         else:
             RMIN_a = np.full(num, RMIN)
@@ -364,19 +387,17 @@ def all_individuals(NCORES,
             ]).T
 
             with mp.Pool(processes=num) as pool:
-                resmap = pool.map(individual_profile_unpack, entrada)
+                resmap = pool.map(partial_profile_unpack, entrada)
                 pool.close()
                 pool.join()
             
         for j,res in enumerate(resmap):
-            Delta[i*num+j]    = res[0]
-            DeltaCum[i*num+j] = res[1]
-            DeltaHalos[i*num+j]    = res[2]
-            DeltaHalosCum[i*num+j] = res[3]
-            VoidID[i*num+j] = res[4]
-
-    for l in range(nvoids):
-        np.savetxt(f"profiles/results/voids_indiv/void_{int(VoidID[l][0])}.csv", np.column_stack([Delta[l], DeltaCum[l], DeltaHalos[l], DeltaHalosCum[l]]), delimiter=',')
+            np.savetxt(
+                f'profiles/results/mass/void_{int(res[5][0])}.csv',
+                np.column_stack(
+                    [res[0],res[1],res[2],res[3],res[4]]
+                ), delimiter=','
+            )
 
     print('end!')
 
