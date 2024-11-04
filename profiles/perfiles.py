@@ -376,7 +376,7 @@ def all_individuals(NCORES,
             VoidID[i*num+j] = res[4]
 
     for l in range(nvoids):
-        np.savetxt(f"profiles/tests/void_{int(VoidID[l][0])}.csv", np.column_stack([Delta[l], DeltaCum[l], DeltaHalos[l], DeltaHalosCum[l]]), delimiter=',')
+        np.savetxt(f"profiles/results/voids_indiv/void_{int(VoidID[l][0])}.csv", np.column_stack([Delta[l], DeltaCum[l], DeltaHalos[l], DeltaHalosCum[l]]), delimiter=',')
 
     print('end!')
 
