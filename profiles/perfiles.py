@@ -334,6 +334,20 @@ def stacking(NCORES,
 
     return 0
 
+def test(RMIN,RMAX, NBINS, 
+        Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, flag=2):
+    
+    L,_,_ = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
+                                flag=flag)
+
+    for i in range(10):
+        Delta, DeltaCum, DeltaHalos, DeltaHalosCum = individual_profile(RMIN,RMAX,NBINS,L[1,i],L[5,i],L[6,i],L[7,i])
+        print(f'id: {L[0,i]}')
+        print(f'rv: {L[1,i]}')
+        print(f'z : {L[2,i]}')
+        np.savetxt(f"profiles/tests/void_{L[0,i]}.csv", delimiter=',')
+
+    print('end!')
 
 if __name__ == "__main__":
 
@@ -391,15 +405,21 @@ if __name__ == "__main__":
     xhalo = xhalo[mask_particles]
     yhalo = yhalo[mask_particles]
     zhalo = zhalo[mask_particles]
-    lmhalo = lmhalo[mask_particles] - 12
+    lmhalo = lmhalo[mask_particles]
 
-    averaging(
+    test(
         a.NCORES, 
         a.RMIN, a.RMAX, a.NBINS,
-        a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max,
-        flag=a.flag, lensname=a.lensname,
-        filename=a.filename,
+        a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max
     )
+
+    # averaging(
+    #     a.NCORES, 
+    #     a.RMIN, a.RMAX, a.NBINS,
+    #     a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max,
+    #     flag=a.flag, lensname=a.lensname,
+    #     filename=a.filename,
+    # )
 
     # stacking(
     #     a.NCORES, 
