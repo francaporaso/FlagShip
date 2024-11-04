@@ -1,15 +1,16 @@
 import numpy as np
 import multiprocessing as mp
 from astropy.io import fits
+import matplotlib.pyplot as plt
 
 from perfiles import lenscat_load
 
 a = {
     'NCORES':10,
     'RMIN':0.0, 'RMAX':5.0, 'NBINS':50,
-    'Rv_min':10.0, 'Rv_max':12.0, 'z_min':0.2, 'z_max':0.3, 'rho1_min':-1.0, 'rho1_max':-0.8, 'rho2_min':-1.0, 'rho2_max':100.0,
+    'Rv_min':10.0, 'Rv_max':12.0, 'z_min':0.2, 'z_max':0.21, 'rho1_min':-1.0, 'rho1_max':-0.8, 'rho2_min':-1.0, 'rho2_max':100.0,
     'flag':2.0,
-    'filename':'test', 'lensname':'server', 'tracname':'server',
+    'filename':'test', 'lensname':'local', 'tracname':'local',
 }
 
 if (a['tracname'] == 'local') or (a['lensname'] == 'local'):
@@ -73,22 +74,14 @@ def perfiles_serie():
                             flag=a['flag'], lensname=a['lensname'],
                             split=False)
 
-    mass  = np.zeros(a['NBINS'])
-    halos = np.zeros(a['NBINS'])
-    massball  = 0.0
-    halosball = 0.0
+    nvoids = 10
+    mass  = np.zeros((nvoids, a['NBINS']))
+    halos = np.zeros((nvoids, a['NBINS']))
+    massball  = np.zeros(nvoids)
+    halosball = np.zeros(nvoids)
 
-    # profs = [partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,i], L[5,i], L[6,i], L[7,i]) for i in range(10)]
-    profs = partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,0], L[5,0], L[6,0], L[7,0])
-
-    for res in profs:
-        mass  += res[0]
-        halos += res[1]
-        massball  += res[2]
-        halosball += res[3]
-
-    meandenball   = (massball/(4*np.pi/3 * (5*a['RMAX'])**3))
-    meanhalosball = (halosball/(4*np.pi/3 * (5*a['RMAX'])**3))
+    profs = [partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,i], L[5,i], L[6,i], L[7,i]) for i in range(nvoids)]
+    # profs = partial_profile(a['RMIN'], a['RMAX'], a['NBINS'], L[1,0], L[5,0], L[6,0], L[7,0])
 
     DR = (a['RMAX']-a['RMIN'])/a['NBINS']    
     
@@ -101,14 +94,47 @@ def perfiles_serie():
     vol    *= (4*np.pi/3)
     volcum *= (4*np.pi/3)
 
-    Delta = mass/vol/meandenball - 1
-    DeltaHalos = halos/vol/meanhalosball - 1
-    DeltaCum = np.cumsum(mass)/volcum/meandenball - 1
-    DeltaHalosCum = np.cumsum(halos)/volcum/meanhalosball - 1
+    r = np.linspace(a['RMIN'],a['RMAX'],a['NBINS'])
 
-    print(f"Saving in: serie_{a['filename']}")
-    data = np.column_stack((Delta, DeltaCum, DeltaHalos, DeltaHalosCum))
-    np.savetxt("serie_py_"+a['filename'], data, delimiter=',')
+    for i in range(nvoids):
+        meandenball   = (massball[i]/(4*np.pi/3 * (5*a['RMAX'])**3))
+        meanhalosball = (halosball[i]/(4*np.pi/3 * (5*a['RMAX'])**3))  
+
+        Delta = mass[i]/vol/meandenball - 1
+        DeltaHalos = halos[i]/vol/meanhalosball - 1
+        DeltaCum = np.cumsum(mass[i])/volcum/meandenball - 1
+        DeltaHalosCum = np.cumsum(halos[i])/volcum/meanhalosball - 1
+
+        plt.plot(r, DeltaCum, c='C0', alpha=0.1)
+    plt.show()
+    # for res in profs:
+    #     mass  += res[0]
+    #     halos += res[1]
+    #     massball  += res[2]
+    #     halosball += res[3]
+
+    # meandenball   = (massball/(4*np.pi/3 * (5*a['RMAX'])**3))
+    # meanhalosball = (halosball/(4*np.pi/3 * (5*a['RMAX'])**3))
+
+    # DR = (a['RMAX']-a['RMIN'])/a['NBINS']    
+    
+    # vol    = np.zeros(a['NBINS'])
+    # volcum = np.zeros(a['NBINS'])
+    # for k in range(a['NBINS']):
+    #     vol[k]    = ((k+1.0)*DR + a['RMIN'])**3 - (k*DR + a['RMIN'])**3
+    #     volcum[k] = ((k+1.0)*DR + a['RMIN'])**3
+    
+    # vol    *= (4*np.pi/3)
+    # volcum *= (4*np.pi/3)
+
+    # Delta = mass/vol/meandenball - 1
+    # DeltaHalos = halos/vol/meanhalosball - 1
+    # DeltaCum = np.cumsum(mass)/volcum/meandenball - 1
+    # DeltaHalosCum = np.cumsum(halos)/volcum/meanhalosball - 1
+
+    # print(f"Saving in: serie_{a['filename']}")
+    # data = np.column_stack((Delta, DeltaCum, DeltaHalos, DeltaHalosCum))
+    # np.savetxt("serie_py_"+a['filename'], data, delimiter=',')
 
     return 0
 
