@@ -407,7 +407,6 @@ if __name__ == "__main__":
     lmhalo = lmhalo[mask_particles]
 
     test(
-        a.NCORES, 
         a.RMIN, a.RMAX, a.NBINS,
         a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max
     )
