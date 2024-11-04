@@ -53,6 +53,8 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
     L = L[:,mask]
 
     if split:
+        if nvoids < NSPLITS:
+            NSPLITS = nvoids
         lbins = int(round(nvoids/float(NSPLITS), 0))
         slices = ((np.arange(lbins)+1)*NSPLITS).astype(int)
         slices = slices[(slices < nvoids)]
@@ -145,9 +147,6 @@ def averaging(NCORES,
 
     print(f"NVOIDS: .... {nvoids}")
 
-    if nvoids < NCORES:
-            NCORES = nvoids
-
     Delta    = np.zeros((nvoids, nk+1,NBINS))
     DeltaCum = np.zeros((nvoids, nk+1,NBINS))
     DeltaHalos    = np.zeros((nvoids, nk+1,NBINS))
@@ -232,9 +231,6 @@ def stacking(NCORES,
                                 split=True, NSPLITS=NCORES)
 
     print(f"NVOIDS: .... {nvoids}")
-
-    if nvoids < NCORES:
-            NCORES = nvoids
 
     mass  = np.zeros((nk+1,NBINS))
     halos = np.zeros((nk+1,NBINS))
@@ -340,7 +336,7 @@ def all_individuals(NCORES,
     
     L,_,nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
                               split=True, NSPLITS=NCORES)
-
+    
     Delta  = np.zeros((nvoids, NBINS))
     DeltaCum = np.zeros((nvoids, NBINS))
     DeltaHalos = np.zeros((nvoids, NBINS))
@@ -394,7 +390,7 @@ if __name__ == "__main__":
     options = {
         '--NCORES':32,
         '--RMIN':0.0, '--RMAX':5.0, '--NBINS':200,
-        '--Rv_min':10.0, '--Rv_max':10.5, '--z_min':0.2, '--z_max':0.21, '--rho1_min':-1.0, '--rho1_max':-0.8, '--rho2_min':-1.0, '--rho2_max':100.0,
+        '--Rv_min':10.0, '--Rv_max':11.0, '--z_min':0.2, '--z_max':0.21, '--rho1_min':-1.0, '--rho1_max':-0.8, '--rho2_min':-1.0, '--rho2_max':100.0,
         '--flag':2.0,
         '--filename':'test', '--lensname':'server', '--tracname':'server',
     }
