@@ -115,7 +115,7 @@ def partial_profile2(RMIN,RMAX,NBINS,
         NHalos[ibin] += 1.0
         mass[ibin] += 10.0**lm
 
-    vol = np.array([((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3 for k in range(NBINS)])
+    vol = np.array([((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3 for k in range(NBINS)]) * rv**3
         
     return mass, NHalos, massball, halosball, vol, np.full(NBINS, vid)
 
@@ -357,9 +357,12 @@ def all_individuals(NCORES,
                     RMIN,RMAX, NBINS, 
                     Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max):
     
+    print("Ejecutando all_individuals para perfiles individuales de masa")
+
     L,_,nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
                               split=True, NSPLITS=NCORES)
     
+    print(f"NVOIDS: {nvoids}")
     Delta  = np.zeros((nvoids, NBINS))
     DeltaCum = np.zeros((nvoids, NBINS))
     DeltaHalos = np.zeros((nvoids, NBINS))
@@ -375,7 +378,7 @@ def all_individuals(NCORES,
                 Li[0][1], Li[0][5], Li[0][6], Li[0][7], Li[0][0],
             ])
             
-            resmap = partial_profile(*entrada)
+            resmap = partial_profile2(*entrada)
 
         else:
             RMIN_a = np.full(num, RMIN)
@@ -387,7 +390,7 @@ def all_individuals(NCORES,
             ]).T
 
             with mp.Pool(processes=num) as pool:
-                resmap = pool.map(partial_profile_unpack, entrada)
+                resmap = pool.map(partial_profile_unpack2, entrada)
                 pool.close()
                 pool.join()
             
@@ -399,7 +402,7 @@ def all_individuals(NCORES,
                 ), delimiter=','
             )
 
-    print('end!')
+    print('END!')
 
 if __name__ == "__main__":
 
