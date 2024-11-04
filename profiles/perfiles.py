@@ -101,7 +101,7 @@ def partial_profile_unpack(myinput):
     return partial_profile(*myinput)
 
 def individual_profile(RMIN, RMAX, NBINS,
-                       rv, xv, yv, zv):
+                       rv, xv, yv, zv, vid):
     
     NBINS = int(NBINS)
     mass, halos, massball, halosball = partial_profile(RMIN, RMAX, NBINS, rv, xv, yv, zv)
@@ -125,7 +125,7 @@ def individual_profile(RMIN, RMAX, NBINS,
     DeltaHalos    = (halos/vol)/meanhalosball - 1
     DeltaHalosCum = (np.cumsum(halos)/volcum)/meanhalosball - 1
 
-    return Delta, DeltaCum, DeltaHalos, DeltaHalosCum
+    return Delta, DeltaCum, DeltaHalos, DeltaHalosCum, np.full(NBINS, vid)
 
 def individual_profile_unpack(myinput):
     return individual_profile(*myinput)
@@ -334,17 +334,53 @@ def stacking(NCORES,
 
     return 0
 
-def test(RMIN,RMAX, NBINS, 
-        Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max):
+def all_individuals(NCORES, 
+                    RMIN,RMAX, NBINS, 
+                    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max):
     
-    L,_,_ = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max)
+    L,_,nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
+                              split=True, NSPLITS=NCORES)
 
-    for i in range(10):
-        Delta, DeltaCum, DeltaHalos, DeltaHalosCum = individual_profile(RMIN,RMAX,NBINS,L[1,i],L[5,i],L[6,i],L[7,i])
-        print(f'id: {L[0,i]}')
-        print(f'rv: {L[1,i]}')
-        print(f'z : {L[2,i]}')
-        np.savetxt(f"profiles/tests/void_{int(L[0,i])}.csv", np.column_stack([Delta, DeltaCum, DeltaHalos, DeltaHalosCum]), delimiter=',')
+    Delta  = np.zeros((nvoids, NBINS))
+    DeltaCum = np.zeros((nvoids, NBINS))
+    DeltaHalos = np.zeros((nvoids, NBINS))
+    DeltaHalosCum = np.zeros((nvoids, NBINS))
+    VoidID = np.zeros((nvoids, NBINS))
+
+    for i,Li in enumerate(tqdm(L)):
+
+        num = len(Li)
+        if num==1:
+            entrada = np.array([
+                RMIN, RMAX, NBINS,
+                Li[0][1], Li[0][5], Li[0][6], Li[0][7],
+            ])
+            
+            resmap = individual_profile(*entrada)
+
+        else:
+            RMIN_a = np.full(num, RMIN)
+            RMAX_a = np.full(num, RMAX)
+            NBINS_a = np.full(num, NBINS)
+            entrada = np.array([
+                RMIN_a, RMAX_a, NBINS_a, 
+                Li.T[1], Li.T[5], Li.T[6], Li.T[7], Li.T[0],
+            ]).T
+
+            with mp.Pool(processes=num) as pool:
+                resmap = pool.map(individual_profile_unpack, entrada)
+                pool.close()
+                pool.join()
+            
+        for j,res in enumerate(resmap):
+            Delta[i*num+j]    = res[0]
+            DeltaCum[i*num+j] = res[1]
+            DeltaHalos[i*num+j]    = res[2]
+            DeltaHalosCum[i*num+j] = res[3]
+            VoidID[i*num+j] = res[4]
+
+    for l in range(nvoids):
+        np.savetxt(f"profiles/tests/void_{int(VoidID[l])}.csv", np.column_stack([Delta[l], DeltaCum[l], DeltaHalos[l], DeltaHalosCum[l]]), delimiter=',')
 
     print('end!')
 
@@ -356,9 +392,9 @@ if __name__ == "__main__":
     import argparse as ag
     
     options = {
-        '--NCORES':100,
-        '--RMIN':0.0, '--RMAX':5.0, '--NBINS':50,
-        '--Rv_min':10.0, '--Rv_max':12.0, '--z_min':0.2, '--z_max':0.3, '--rho1_min':-1.0, '--rho1_max':-0.8, '--rho2_min':-1.0, '--rho2_max':100.0,
+        '--NCORES':32,
+        '--RMIN':0.0, '--RMAX':5.0, '--NBINS':200,
+        '--Rv_min':10.0, '--Rv_max':10.5, '--z_min':0.2, '--z_max':0.21, '--rho1_min':-1.0, '--rho1_max':-0.8, '--rho2_min':-1.0, '--rho2_max':100.0,
         '--flag':2.0,
         '--filename':'test', '--lensname':'server', '--tracname':'server',
     }
@@ -406,7 +442,8 @@ if __name__ == "__main__":
     zhalo = zhalo[mask_particles]
     lmhalo = lmhalo[mask_particles]
 
-    test(
+    all_individuals(
+        a.NCORES,
         a.RMIN, a.RMAX, a.NBINS,
         a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max
     )
