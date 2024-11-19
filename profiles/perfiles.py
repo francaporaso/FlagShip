@@ -53,7 +53,7 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
     L = L[:,mask]
 
     if split:
-        if nvoids < NSPLITS:
+        if NSPLITS > nvoids:
             NSPLITS = nvoids
         lbins = int(round(nvoids/float(NSPLITS), 0))
         slices = ((np.arange(lbins)+1)*NSPLITS).astype(int)
