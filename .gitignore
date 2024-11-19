@@ -8,3 +8,6 @@ __pycache__
 
 # ignora resultados
 results/
+
+# ignora ipynb_checkpoints
+.ipynb_checkpoints/
