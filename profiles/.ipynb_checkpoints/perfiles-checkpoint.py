@@ -53,6 +53,8 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
     L = L[:,mask]
 
     if split:
+        if NSPLITS > nvoids:
+            NSPLITS = nvoids
         lbins = int(round(nvoids/float(NSPLITS), 0))
         slices = ((np.arange(lbins)+1)*NSPLITS).astype(int)
         slices = slices[(slices < nvoids)]
@@ -66,7 +68,7 @@ def get_halos(RMIN, RMAX,
               rv, xv, yv, zv):
 
     global xhalo, yhalo, zhalo, lmhalo
-    distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2 )
+    distance = np.sqrt( (xhalo - xv)**2 + (yhalo - yv)**2 + (zhalo - zv)**2 ) / rv
     mask_ball = (distance < 5*RMAX) & (distance >= 0.0)
     mask_prof = (distance < RMAX) & (distance >= RMIN)
 
@@ -81,8 +83,9 @@ def get_halos(RMIN, RMAX,
 ## TODO
 ## agregar solucion a edgecases cuando el perfil se escapa de la caja
 def partial_profile(RMIN,RMAX,NBINS,
-                    rv, xv, yv, zv):
+                    rv, xv, yv, zv, vid):
     
+    NBINS = int(NBINS)
     logm, distance, massball, halosball = get_halos(RMIN, RMAX, rv, xv, yv, zv)
 
     NHalos = np.zeros(NBINS)
@@ -94,38 +97,60 @@ def partial_profile(RMIN,RMAX,NBINS,
         NHalos[ibin] += 1.0
         mass[ibin] += 10.0**lm
 
-    return mass, NHalos, massball, halosball
+    return mass, NHalos, massball, halosball, np.full(NBINS, vid)
+
+def partial_profile2(RMIN,RMAX,NBINS,
+                    rv, xv, yv, zv, 
+                    vid):
+    
+    NBINS = int(NBINS)
+    logm, distance, massball, halosball = get_halos(RMIN, RMAX, rv, xv, yv, zv)
+
+    NHalos = np.zeros(NBINS)
+    mass = np.zeros(NBINS)
+
+    DR = (RMAX-RMIN)/NBINS
+    for lm,d in zip(logm,distance):
+        ibin = int(np.floor((d-RMIN)/DR))
+        NHalos[ibin] += 1.0
+        mass[ibin] += 10.0**lm
+
+    vol = np.array([((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3 for k in range(NBINS)]) * rv**3
+        
+    return mass, NHalos, np.full(NBINS,massball), np.full(NBINS,halosball), vol, np.full(NBINS, vid)
 
 def partial_profile_unpack(myinput):
     return partial_profile(*myinput)
 
-def individual_profile(RMIN, RMAX, DR,
-                       rv, xv, yv, zv):
-    
-    RMIN *= rv
-    RMAX *= rv
+def partial_profile_unpack2(myinput):
+    return partial_profile2(*myinput)
 
-    NBINS = np.ceil((RMAX-RMIN)/DR).astype(int)
+def individual_profile(RMIN, RMAX, NBINS,
+                       rv, xv, yv, zv, vid):
+    
+    NBINS = int(NBINS)
     mass, halos, massball, halosball = partial_profile(RMIN, RMAX, NBINS, rv, xv, yv, zv)
     
-    meandenball = massball/(4/3*np.pi * (5*RMAX)**3)
-    meanhalosball = halosball/(4/3*np.pi * (5*RMAX)**3)
+    meandenball = massball/(4/3*np.pi * (5*RMAX*rv)**3)
+    meanhalosball = halosball/(4/3*np.pi * (5*RMAX*rv)**3)
 
+    DR = (RMAX-RMIN)/NBINS
+    
     vol    = np.zeros(NBINS)
     volcum = np.zeros(NBINS)
     for k in range(NBINS):
         vol[k]    = ((k+1.0)*DR + RMIN)**3 - (k*DR + RMIN)**3
         volcum[k] = ((k+1.0)*DR + RMIN)**3
 
-    vol    *= 4/3*np.pi
-    volcum *= 4/3*np.pi
+    vol    *= 4/3*np.pi * rv**3
+    volcum *= 4/3*np.pi * rv**3
 
     Delta    = (mass/vol)/meandenball - 1
     DeltaCum = (np.cumsum(mass)/volcum)/meandenball - 1
     DeltaHalos    = (halos/vol)/meanhalosball - 1
     DeltaHalosCum = (np.cumsum(halos)/volcum)/meanhalosball - 1
 
-    return Delta, DeltaCum, DeltaHalos, DeltaHalosCum
+    return Delta, DeltaCum, DeltaHalos, DeltaHalosCum, np.full(NBINS, vid)
 
 def individual_profile_unpack(myinput):
     return individual_profile(*myinput)
@@ -134,7 +159,7 @@ def individual_profile_unpack(myinput):
 ## TODO
 ## cambiar guardado en .csv por .fits
 def averaging(NCORES, 
-              RMIN, RMAX, DR,
+              RMIN, RMAX, NBINS,
               Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
               flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat", filename="pru_stack.csv"):
 
@@ -145,15 +170,10 @@ def averaging(NCORES,
 
     print(f"NVOIDS: .... {nvoids}")
 
-    if nvoids < NCORES:
-            NCORES = nvoids
-
-    p = {}
-
-    Delta    = np.zeros((nk+1,NBINS))
-    DeltaCum = np.zeros((nk+1,NBINS))
-    DeltaHalos    = np.zeros((nk+1,NBINS))
-    DeltaHalosCum = np.zeros((nk+1,NBINS))
+    Delta    = np.zeros((nvoids, nk+1,NBINS))
+    DeltaCum = np.zeros((nvoids, nk+1,NBINS))
+    DeltaHalos    = np.zeros((nvoids, nk+1,NBINS))
+    DeltaHalosCum = np.zeros((nvoids, nk+1,NBINS))
 
     ### TODO
     #### es probable que no sea necesario dividir L, simplemente usando ´chuncksize´ de Pool.map
@@ -234,9 +254,6 @@ def stacking(NCORES,
                                 split=True, NSPLITS=NCORES)
 
     print(f"NVOIDS: .... {nvoids}")
-
-    if nvoids < NCORES:
-            NCORES = nvoids
 
     mass  = np.zeros((nk+1,NBINS))
     halos = np.zeros((nk+1,NBINS))
@@ -336,6 +353,56 @@ def stacking(NCORES,
 
     return 0
 
+def all_individuals(NCORES, 
+                    RMIN,RMAX, NBINS, 
+                    Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max):
+    
+    print("Ejecutando all_individuals para perfiles individuales de masa")
+
+    L,_,nvoids = lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max,
+                              split=True, NSPLITS=NCORES)
+    
+    print(f"NVOIDS: {nvoids}")
+    Delta  = np.zeros((nvoids, NBINS))
+    DeltaCum = np.zeros((nvoids, NBINS))
+    DeltaHalos = np.zeros((nvoids, NBINS))
+    DeltaHalosCum = np.zeros((nvoids, NBINS))
+    VoidID = np.zeros((nvoids, NBINS))
+
+    for i,Li in enumerate(tqdm(L)):
+
+        num = len(Li)
+        if num==1:
+            entrada = np.array([
+                RMIN, RMAX, NBINS,
+                Li[0][1], Li[0][5], Li[0][6], Li[0][7], Li[0][0],
+            ])
+            
+            resmap = partial_profile2(*entrada)
+
+        else:
+            RMIN_a = np.full(num, RMIN)
+            RMAX_a = np.full(num, RMAX)
+            NBINS_a = np.full(num, NBINS)
+            entrada = np.array([
+                RMIN_a, RMAX_a, NBINS_a, 
+                Li.T[1], Li.T[5], Li.T[6], Li.T[7], Li.T[0],
+            ]).T
+
+            with mp.Pool(processes=num) as pool:
+                resmap = pool.map(partial_profile_unpack2, entrada)
+                pool.close()
+                pool.join()
+            
+        for j,res in enumerate(resmap):
+            np.savetxt(
+                f'profiles/results/mass/void_{int(res[5][0])}.csv',
+                np.column_stack(
+                    [res[0],res[1],res[2],res[3],res[4]]
+                ), delimiter=','
+            )
+
+    print('END!')
 
 if __name__ == "__main__":
 
@@ -345,9 +412,9 @@ if __name__ == "__main__":
     import argparse as ag
     
     options = {
-        '--NCORES':100,
-        '--RMIN':0.0, '--RMAX':5.0, '--DR':10, ## [DR] = Mpc/h
-        '--Rv_min':10.0, '--Rv_max':12.0, '--z_min':0.2, '--z_max':0.3, '--rho1_min':-1.0, '--rho1_max':-0.8, '--rho2_min':-1.0, '--rho2_max':100.0,
+        '--NCORES':32,
+        '--RMIN':0.0, '--RMAX':5.0, '--NBINS':200,
+        '--Rv_min':10.0, '--Rv_max':11.0, '--z_min':0.2, '--z_max':0.21, '--rho1_min':-1.0, '--rho1_max':-0.8, '--rho2_min':-1.0, '--rho2_max':100.0,
         '--flag':2.0,
         '--filename':'test', '--lensname':'server', '--tracname':'server',
     }
@@ -378,7 +445,7 @@ if __name__ == "__main__":
         tipo = 'A'
 
     if (a.filename[:4] !='test'):
-        a.filename = "averageradialphys_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
+        a.filename = "averageradialprof_R{:.0f}_{:.0f}_z{:.1f}_{:.1f}_type{}".format(a.Rv_min, a.Rv_max, a.z_min, a.z_max, tipo)
     a.filename += '.csv'
 
     ## opening tracers file and general masking
@@ -395,13 +462,19 @@ if __name__ == "__main__":
     zhalo = zhalo[mask_particles]
     lmhalo = lmhalo[mask_particles]
 
-    averaging(
-        a.NCORES, 
-        a.RMIN, a.RMAX, a.DR,
-        a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max,
-        flag=a.flag, lensname=a.lensname,
-        filename=a.filename,
+    all_individuals(
+        a.NCORES,
+        a.RMIN, a.RMAX, a.NBINS,
+        a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max
     )
+
+    # averaging(
+    #     a.NCORES, 
+    #     a.RMIN, a.RMAX, a.NBINS,
+    #     a.Rv_min, a.Rv_max, a.z_min, a.z_max, a.rho1_min, a.rho1_max, a.rho2_min, a.rho2_max,
+    #     flag=a.flag, lensname=a.lensname,
+    #     filename=a.filename,
+    # )
 
     # stacking(
     #     a.NCORES, 
