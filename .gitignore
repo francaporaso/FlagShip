@@ -3,6 +3,9 @@
 *.txt
 *.csv
 
+# ignora carpeta zehavi
+/zehavi2011
+
 # ignora run local
 __pycache__
 
