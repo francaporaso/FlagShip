@@ -7,7 +7,8 @@ cosmo = LambdaCDM(H0=100*h, Om0=0.25, Ode0=0.75)
 
 ## TODO puede que sea más efficiente simplemente pasando los maximos y minimos
 ## para z no funcionaría xq tiene q interpolar...
-def make_randoms(ra, dec, z, size_random):
+def make_randoms(ra, dec, z, size_random,
+                 rv = None):
     
     print('Making randoms...')
 
@@ -27,7 +28,20 @@ def make_randoms(ra, dec, z, size_random):
     z_rand = np.random.choice(zr,size_random,replace=True,p=peso)
 
     randoms = {'ra': ra_rand, 'dec': dec_rand, 'z':z_rand}
+
+    if rv != None:
+        y,xbins  = np.histogram(rv, 25)
+        x  = xbins[:-1] + 0.5*np.diff(xbins)
+        n = 3
+        poly = np.polyfit(x,y,n)
+        rvr = np.random.uniform(rv.min(), rv.max(), 1_000_000)
+        poly_y = np.poly1d(poly)(rvr)
+        poly_y[poly_y<0] = 0.
+        peso = poly_y/sum(poly_y)
+        rv_rand = np.random.choice(rvr, size_random, replace=True, p=peso)
     
+        randoms[ 'rv'] = rv_rand
+
     print('Wii randoms!')
     return randoms
 
@@ -41,54 +55,14 @@ def ang2xyz(ra, dec, redshift,
 
     return x,y,z
 
-def plot_sky(ang_pos, rands_ang):
-    
-    plt.hist(ang_pos['ra'], bins=25, histtype='step', density=True)
-    plt.hist(rands_ang['ra'], bins=25, histtype='step', density=True)
-    plt.show()
-    plt.hist(ang_pos['dec'], bins=25, histtype='step', density=True)
-    plt.hist(rands_ang['dec'], bins=25, histtype='step', density=True)
-    plt.show()
-    plt.hist(ang_pos['z'], bins=25, histtype='step', density=True)
-    plt.hist(rands_ang['z'], bins=25, histtype='step', density=True)
-    plt.show()
-
-    amin, amax = 0,90
-    alpha = 0.9
-    mran = (rands_ang['ra'] > amin) & (rands_ang['ra'] < amax) & (rands_ang['dec'] > amin) & (rands_ang['dec'] < amax)
-    mtru = (ang_pos['ra'] > amin) & (ang_pos['ra'] < amax) & (ang_pos['dec'] > amin) & (ang_pos['dec'] < amax)
-    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(15,5))
-    ax1.scatter(rands_ang['ra'][mran] * np.cos(rands_ang['dec'][mran]*np.pi/180), rands_ang['dec'][mran], color='green', s=0.1, alpha=alpha)
-    ax1.set_xlabel('RA * cos(Dec)')
-    ax1.set_ylabel('Dec')
-    ax1.set_title('Randoms')
-
-    ax2.scatter(ang_pos['ra'][mtru] * np.cos(ang_pos['dec'][mtru]*np.pi/180), ang_pos['dec'][mtru], color='blue', s=0.1, alpha=alpha)
-    ax2.set_xlabel('RA * cos(Dec)')
-    ax2.set_ylabel('Dec')
-    ax2.set_title('Data')
-
-    plt.show()
-
-def plot_xyz():
-    fig = plt.figure(figsize=plt.figaspect(0.5))
-    ## plot data
-    ax = fig.add_subplot(1, 2, 1, projection='3d')
-    ax.scatter(*xyz_pos,
-               s=1, alpha=0.3, c='b')
-    ax.set_title('Data')
-    ax = fig.add_subplot(1, 2, 2, projection='3d')
-    ax.scatter(*rands_xyz,
-               s=1, alpha=0.3, c='g')
-    ax.set_title('Randoms')
-    plt.show()
 
 if __name__ == '__main__':
 
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
+    from plots_vgcf import *
 
     N = 10_000
-    z0,z1 = 0.1, 0.12
+    z0,z1 = 0., 0.1
 
     with fits.open('/home/franco/FAMAF/Lensing/cats/MICE/mice18917.fits') as f:
         z_gal = f[1].data.z_cgal
@@ -107,4 +81,3 @@ if __name__ == '__main__':
     rands_ang = make_randoms(*ang_pos.values(),N)
     rands_xyz = ang2xyz(*rands_ang.values())
     # mask = (np.abs(rands_box[2]) < 10)
-    
