@@ -2,6 +2,11 @@ import numpy as np
 from astropy.io import fits
 from astropy.cosmology import LambdaCDM
 
+h = 1.0
+cosmo = LambdaCDM(H0=100*h, Om0=0.25, Ode0=0.75)
+
+## TODO puede que sea más efficiente simplemente pasando los maximos y minimos
+## para z no funcionaría xq tiene q interpolar...
 def make_randoms(ra, dec, z, size_random):
     
     print('Making randoms...')
@@ -27,7 +32,37 @@ def make_randoms(ra, dec, z, size_random):
     
     return randoms
 
-def ang2xyz(ang_pos):
-    ang_pos['ra']
-    ang_pos['dec']
-    ang_pos['z']
+def ang2xyz(ra, dec, redshift,
+            cosmo=cosmo):
+
+    comdist = cosmo.comoving_distance(redshift).value #Mpc; Mpc/h si h=1
+    x = comdist * np.cos(dec) * np.cos(ra)
+    y = comdist * np.cos(dec) * np.sin(ra)
+    z = comdist * np.sin(dec)
+
+    return x,y,z
+
+if __name__ == '__main__':
+
+    import matplotlib.pyplot as plt
+
+    N = 10000
+    ra  = 90.0 * np.random.rand(N)
+    dec = np.rad2deg(np.sin(np.random.rand(N)))
+    redshift = 0.4 * np.random.rand(N)
+    rands_ang = make_randoms(ra,dec,redshift,10*N)
+    rands_box = ang2xyz(*rands_ang.values())
+
+    plt.hist(ra, bins=25, histtype='step')
+    plt.hist(rands_ang['ra'], bins=25, histtype='step')
+    plt.show()
+    plt.hist(dec, bins=25, histtype='step')
+    plt.hist(rands_ang['dec'], bins=25, histtype='step')
+    plt.show()
+    plt.hist(redshift, bins=25, histtype='step')
+    plt.hist(rands_ang['z'], bins=25, histtype='step')
+    plt.show()
+
+    plt.scatter(ra*np.cos(np.deg2rad(dec)),dec,s=0.5)
+    # plt.scatter(rands[0],rands[1],s=0.5)
+    plt.show()
