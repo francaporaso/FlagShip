@@ -4,13 +4,13 @@
 *.csv
 
 # ignora carpeta zehavi
-/zehavi2011
+**/zehavi2011/
 
 # ignora run local
-__pycache__
+**/__pycache__/
 
 # ignora resultados
-results/
+**/results/
 
 # ignora ipynb_checkpoints
-.ipynb_checkpoints/
+**/.ipynb_checkpoints/
