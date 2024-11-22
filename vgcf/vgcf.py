@@ -70,6 +70,19 @@ def plot_sky(ang_pos, rands_ang):
 
     plt.show()
 
+def plot_xyz():
+    fig = plt.figure(figsize=plt.figaspect(0.5))
+    ## plot data
+    ax = fig.add_subplot(1, 2, 1, projection='3d')
+    ax.scatter(*xyz_pos,
+               s=1, alpha=0.3, c='b')
+    ax.set_title('Data')
+    ax = fig.add_subplot(1, 2, 2, projection='3d')
+    ax.scatter(*rands_xyz,
+               s=1, alpha=0.3, c='g')
+    ax.set_title('Randoms')
+    plt.show()
+
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
@@ -91,12 +104,7 @@ if __name__ == '__main__':
 
     ang_pos = {'ra':ra[:N], 'dec':dec[:N], 'z':z_gal[:N]}
     xyz_pos = ang2xyz(*ang_pos.values())
-    rands_ang = make_randoms(*ang_pos.values(),10*N)
-    rands_box = ang2xyz(*rands_ang.values())
+    rands_ang = make_randoms(*ang_pos.values(),N)
+    rands_xyz = ang2xyz(*rands_ang.values())
     # mask = (np.abs(rands_box[2]) < 10)
     
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.scatter(*xyz_pos,
-               s=1, alpha=0.3)
-    plt.show()
