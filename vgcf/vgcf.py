@@ -7,11 +7,11 @@ cosmo = LambdaCDM(H0=100*h, Om0=0.25, Ode0=0.75)
 
 ## TODO puede que sea más efficiente simplemente pasando los maximos y minimos
 ## para z no funcionaría xq tiene q interpolar...
-def make_randoms(ra, dec, z, 
-                 rv = None,
+def make_randoms(data,
                  size_random = 100):
     
     print('Making randoms...')
+    ra, dec, z = data['ra'], data['dec'], data['z']
 
     dec = np.deg2rad(dec)
     sindec_rand = np.random.uniform(np.sin(dec.min()), np.sin(dec.max()), size_random)
@@ -30,7 +30,8 @@ def make_randoms(ra, dec, z,
 
     randoms = {'ra': ra_rand, 'dec': dec_rand, 'z':z_rand}
 
-    if any(rv) != None:
+    if len(data.keys()) == 4:
+        rv = data['rv']
         y,xbins  = np.histogram(rv, 25)
         x  = xbins[:-1] + 0.5*np.diff(xbins)
         n = 3
