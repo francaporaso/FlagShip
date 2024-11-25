@@ -7,8 +7,9 @@ cosmo = LambdaCDM(H0=100*h, Om0=0.25, Ode0=0.75)
 
 ## TODO puede que sea más efficiente simplemente pasando los maximos y minimos
 ## para z no funcionaría xq tiene q interpolar...
-def make_randoms(ra, dec, z, size_random,
-                 rv = None):
+def make_randoms(ra, dec, z, 
+                 rv = None,
+                 size_random = 100):
     
     print('Making randoms...')
 
@@ -29,7 +30,7 @@ def make_randoms(ra, dec, z, size_random,
 
     randoms = {'ra': ra_rand, 'dec': dec_rand, 'z':z_rand}
 
-    if rv != None:
+    if any(rv) != None:
         y,xbins  = np.histogram(rv, 25)
         x  = xbins[:-1] + 0.5*np.diff(xbins)
         n = 3
@@ -40,7 +41,7 @@ def make_randoms(ra, dec, z, size_random,
         peso = poly_y/sum(poly_y)
         rv_rand = np.random.choice(rvr, size_random, replace=True, p=peso)
     
-        randoms[ 'rv'] = rv_rand
+        randoms['rv'] = rv_rand
 
     print('Wii randoms!')
     return randoms
@@ -55,13 +56,124 @@ def ang2xyz(ra, dec, redshift,
 
     return x,y,z
 
+def compute_xi_2d(positions, random_positions,
+                  npi = 16, nbins = 12,
+                  rmin = 0.1, rmax = 200., pi_max = 60.,
+                  NPatches = 16, slop = 0.,
+                  cosmo = cosmo, ncores = 4):
+
+    ## Auxiliary functions to compute the covariance
+    def func(corrs):
+        return corrs[0].weight*0.5
+    
+    def func2(corrs):
+        return corrs[0].weight
+    
+    """ Compute the galaxy-shape correlation in 3D. """
+
+    # arrays to store the output
+    r         = np.zeros(nbins)
+    mean_r    = np.zeros(nbins)
+    mean_logr = np.zeros(nbins)
+
+    xi    = np.zeros((npi, nbins))
+    xi_jk = np.zeros((NPatches, npi, nbins))
+    dd_jk = np.zeros_like(xi_jk)
+    dr_jk = np.zeros_like(xi_jk)
+    rr_jk = np.zeros_like(xi_jk)
+
+    d_p  = cosmo.comoving_distance(positions['z']).value
+    d_r  = cosmo.comoving_distance(random_positions['z']).value
+
+    print('Loading catalogs...')
+    
+    pcat = treecorr.Catalog(ra=positions['ra'], dec=positions['dec'],
+                             r=d_p, npatch = NPatches,
+                             ra_units='deg', dec_units='deg')
+
+    rcat = treecorr.Catalog(ra=random_positions['ra'], dec=random_positions['dec'],
+                             r=d_r, npatch = NPatches,
+                             patch_centers = pcat.patch_centers,
+                             ra_units='deg', dec_units='deg')
+
+    Nd = pcat.sumw
+    Nr = rcat.sumw
+    NNpairs = (Nd*(Nd - 1))/2.
+    RRpairs = (Nr*(Nr - 1))/2.
+    NRpairs = (Nd*Nr)
+
+    f0 = RRpairs/NNpairs
+    f1 = RRpairs/NRpairs
+
+    Pi = np.linspace(-1.*pi_max, pi_max, npi+1)
+    pibins = zip(Pi[:-1],Pi[1:])
+
+    # now loop over Pi bins, and compute w(r_p | Pi)
+    #bar = progressbar.ProgressBar(maxval=npi-1, widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+    #bar.start()
+    print('Calcualting correlation...')
+    for p,(plow,phigh) in enumerate(tqdm(pibins)):
+
+        #bar.update(p)
+        dd = treecorr.NNCorrelation(nbins=nbins, min_sep=rmin, max_sep=rmax,
+                                    min_rpar=plow, max_rpar=phigh,
+                                    bin_slop=slop, brute = False, verbose=0, var_method = 'jackknife')
+        
+        # dr = treecorr.NNCorrelation(nbins=nbins, min_sep=rmin, max_sep=rmax,
+        #                             min_rpar=plow, max_rpar=phigh,
+        #                             bin_slop=slop, brute = False, verbose=0, var_method = 'jackknife')
+        
+        rr = treecorr.NNCorrelation(nbins=nbins, min_sep=rmin, max_sep=rmax,
+                                    min_rpar=plow, max_rpar=phigh,
+                                    bin_slop=slop, brute = False, verbose=0, var_method = 'jackknife')
+
+        dd.process(pcat,pcat, metric='Rperp', num_threads = ncores)
+        # dr.process(pcat,rcat, metric='Rperp', num_threads = ncores)
+        rr.process(rcat,rcat, metric='Rperp', num_threads = ncores)
+
+        r[:] = np.copy(dd.rnom)
+        mean_r[:] = np.copy(dd.meanr)
+        mean_logr[:] = np.copy(dd.meanlogr)
+
+        # xi[p, :] = (dd.weight*0.5*f0 - (2.*dr.weight)*f1 + rr.weight*0.5) / (rr.weight*0.5)
+
+        xi[p,:], _ = dd.calculateXi(rr=rr)
+        
+        #Here I compute the variance
+        dd_jk[:, p, :], weight = treecorr.build_multi_cov_design_matrix([dd], 'jackknife', func = func)
+        # dr_jk[:, p, :], weight = treecorr.build_multi_cov_design_matrix([dr], 'jackknife', func = func2)
+        rr_jk[:, p, :], weight = treecorr.build_multi_cov_design_matrix([rr], 'jackknife', func = func)
+
+        # dd.finalize()
+        # dr.finalize()
+        # rr.finalize()
+
+    for i in range(NPatches):
+
+        swd = np.sum(pcat.w[~(pcat.patch == i)])
+        swr = np.sum(rcat.w[~(rcat.patch == i)])
+
+        NNpairs_JK = (swd*(swd - 1))/2.
+        RRpairs_JK = (swr*(swr - 1))/2.
+        NRpairs_JK = (swd*swr)
+
+        xi_jk[i, :, :] = (dd_jk[i, :, :]/NNpairs_JK - (2.*dr_jk[i, :, :])/NRpairs_JK + rr_jk[i, :, :]/RRpairs_JK) / (rr_jk[i, :, :]/RRpairs_JK)
+
+    xi[np.isinf(xi)] = 0. #It sets to 0 the values of xi_gp that are infinite
+    xi[np.isnan(xi)] = 0. #It sets to 0 the values of xi_gp that are null
+
+    xPi=(Pi[:-1]+Pi[1:])/2 #It returns an array going from -9.5,-8.5,...,8.5,9.5
+
+    return r, mean_r, mean_logr, xPi, xi, xi_jk
+
 
 if __name__ == '__main__':
 
-    # import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
     from plots_vgcf import *
+    from scipy.stats import skewnorm
 
-    N = 10_000
+    N = 1_000
     z0,z1 = 0., 0.1
 
     with fits.open('/home/franco/FAMAF/Lensing/cats/MICE/mice18917.fits') as f:
@@ -71,13 +183,13 @@ if __name__ == '__main__':
         ra  = f[1].data.ra_gal[m_z]
         dec = f[1].data.dec_gal[m_z]
         z_gal = z_gal[m_z]
-    
+
     if (s := m_z.sum()) < N:
         N = s
     print(N)
-
+    
     ang_pos = {'ra':ra[:N], 'dec':dec[:N], 'z':z_gal[:N]}
-    xyz_pos = ang2xyz(*ang_pos.values())
-    rands_ang = make_randoms(*ang_pos.values(),N)
-    rands_xyz = ang2xyz(*rands_ang.values())
+    # xyz_pos = ang2xyz(*ang_pos.values())
+    # rands_ang = make_randoms(*ang_pos.values(),size_randoms=N)
+    # rands_xyz = ang2xyz(*rands_ang.values())
     # mask = (np.abs(rands_box[2]) < 10)
