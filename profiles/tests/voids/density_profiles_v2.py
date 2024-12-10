@@ -9,8 +9,9 @@ sys.path.append('/home/fcaporaso/FlagShip/vgcf/')
 from perfiles import lenscat_load
 from vgcf import ang2xyz
 from tqdm import tqdm
+from multiprocessing import Pool
+from functools import partial
 
-cosmo = LambdaCDM(H0=100, Om0=0.25, Ode0=0.75)
 
 def tracercat_load(catname='mice_sats_18939.fits', if_centrals=True):
     
@@ -43,22 +44,35 @@ def number_density_v2(N, m, xh, yh, zh, lmhalo, rv, xv, yv, zv):
     
     return number_gx, mass_bin, vol
 
-def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100)):
-    
+partial_func = partial(number_density_v2, N, m, xh, yh, zh, lmhalo)
+
+def partial_func_unpack(A):
+    return partial_func(*A)
+
+def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
+         ncores=32, N=10, m=5):
+
+    cosmo = LambdaCDM(H0=100, Om0=0.25, Ode0=0.75)
+
     L,_,nvoids = lenscat_load(*lens_args, 
                          flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
-                         split=False, NSPLITS=1)
-    
+                         split=True, NSPLITS=ncores)
     print('# of voids: ',nvoids)
     
-    xv,yv,zv = ang2xyz(L[2],L[3],L[4],cosmo=cosmo)
-    rv = L[1]
-    
-    ra_gal, dec_gal, z_gal, lmhalo = tracercat_load()
-    
+    ra_gal, dec_gal, z_gal, lmhalo = tracercat_load()    
     print('# of gx: ', len(ra_gal))
     
-
+    ra_gal, dec_gal, z_gal, lmhalo = tracercat_load()
+    xh, yh, zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=cosmo)
+    
+    for i,Li in enumerate(tqdm(L)):
+        with Pool(processes=32) as pool:
+            entrada = np.array([Li.T[1], Li.T[5], Li.T[6], Li.T[7]]).T
+            res = pool.map(partial_func_unpack,
+                           entrada)
+            pool.close()
+            pool.join()
+    
     
 if __name__ == '__main__':
     main()
