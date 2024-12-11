@@ -1,17 +1,16 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from pandas import DataFrame
 from astropy.cosmology import LambdaCDM
 from astropy.io import fits
+from functools import partial
+import matplotlib.pyplot as plt
+from multiprocessing import Pool
+import numpy as np
+from pandas import DataFrame
 import sys
+from tqdm import tqdm
 sys.path.append('/home/fcaporaso/FlagShip/profiles/')
 sys.path.append('/home/fcaporaso/FlagShip/vgcf/')
 from perfiles import lenscat_load
 from vgcf import ang2xyz
-from tqdm import tqdm
-from multiprocessing import Pool
-from functools import partial
-
 
 def tracercat_load(catname='mice_sats_18939.fits', if_centrals=True):
     
@@ -44,7 +43,8 @@ def number_density_v2(N, m, xh, yh, zh, lmhalo, rv, xv, yv, zv):
     
     return number_gx, mass_bin, vol
 
-partial_func = partial(number_density_v2, N, m, xh, yh, zh, lmhalo)
+def partial_func(N, m, xh, yh, zh, lmhalo, *otras_chiruzas):
+    return partial(number_density_v2, N, m, xh, yh, zh, lmhalo)
 
 def partial_func_unpack(A):
     return partial_func(*A)
@@ -55,8 +55,9 @@ def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
     cosmo = LambdaCDM(H0=100, Om0=0.25, Ode0=0.75)
 
     L,_,nvoids = lenscat_load(*lens_args, 
-                         flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
-                         split=True, NSPLITS=ncores)
+                              flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
+                              split=True, NSPLITS=ncores)
+    
     print('# of voids: ',nvoids)
     
     ra_gal, dec_gal, z_gal, lmhalo = tracercat_load()    
@@ -65,14 +66,19 @@ def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
     ra_gal, dec_gal, z_gal, lmhalo = tracercat_load()
     xh, yh, zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=cosmo)
     
+    P = np.zeros((nvoids, N))
     for i,Li in enumerate(tqdm(L)):
-        with Pool(processes=32) as pool:
-            entrada = np.array([Li.T[1], Li.T[5], Li.T[6], Li.T[7]]).T
+        num = len(Li)
+        entrada = np.array([Li.T[1], Li.T[5], Li.T[6], Li.T[7]]).T
+        with Pool(processes=num) as pool:
             res = pool.map(partial_func_unpack,
                            entrada)
             pool.close()
             pool.join()
-    
+        P[i] = res
+
+
+
     
 if __name__ == '__main__':
     main()
