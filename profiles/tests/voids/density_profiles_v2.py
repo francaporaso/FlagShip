@@ -26,7 +26,11 @@ def tracercat_load(catname='mice_sats_18939.fits', if_centrals=True):
     
     return ra_gal, dec_gal, z_gal
 
-def number_density_v2(N, m, xh, yh, zh, lmhalo, rv, xv, yv, zv):
+def density_v2(N, m, xh, yh, zh, lmhalo, void_prop):
+    rv = void_prop[0]
+    xv = void_prop[1]
+    yv = void_prop[2]
+    zv = void_prop[3]
     number_gx = np.zeros(N)
     mass_bin = np.zeros(N)
     vol = np.zeros(N)
@@ -38,20 +42,18 @@ def number_density_v2(N, m, xh, yh, zh, lmhalo, rv, xv, yv, zv):
         number_gx[k] = mask.sum()
         mass_bin[k] = np.sum( 10.0**(lmhalo[mask]) )
         vol[k] = (k+1)**3 - k**3
-
+        
+    mask_mean = (dist < 5*m*const)
+    mass_ball = np.sum( 10.0**(lmhalo[mask_mean]) )
+    mean_den_ball = mass_ball/((4/3)*np.pi*(5*m*const)**3)
+    
     vol *= (4/3)*np.pi*const**3
     
-    return number_gx, mass_bin, vol
-
-def partial_func(N, m, xh, yh, zh, lmhalo, *otras_chiruzas):
-    return partial(number_density_v2, N, m, xh, yh, zh, lmhalo)
-
-def partial_func_unpack(A):
-    return partial_func(*A)
+    return number_gx, mass_bin, vol, np.full_like(vol, mean_den_ball)
 
 def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
          ncores=32, N=10, m=5):
-
+    
     cosmo = LambdaCDM(H0=100, Om0=0.25, Ode0=0.75)
 
     L,_,nvoids = lenscat_load(*lens_args, 
@@ -61,24 +63,27 @@ def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
     print('# of voids: ',nvoids)
     
     ra_gal, dec_gal, z_gal, lmhalo = tracercat_load()    
+    xh, yh, zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=cosmo)
     print('# of gx: ', len(ra_gal))
     
-    ra_gal, dec_gal, z_gal, lmhalo = tracercat_load()
-    xh, yh, zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=cosmo)
+    ## func for paralellization, returns func w 
+    partial_func = partial(density_v2, N, m, xh, yh, zh, lmhalo)
     
-    P = np.zeros((nvoids, N))
+    P = np.zeros((nvoids, 4, N)) # 4=num de arr q devuelve density_v2
     for i,Li in enumerate(tqdm(L)):
         num = len(Li)
         entrada = np.array([Li.T[1], Li.T[5], Li.T[6], Li.T[7]]).T
         with Pool(processes=num) as pool:
-            res = pool.map(partial_func_unpack,
-                           entrada)
+            resmap = pool.map(partial_func,
+                              entrada)
             pool.close()
             pool.join()
-        P[i] = res
-
-
-
+        for j,res in enumerate(resmap):
+            P[i*num + j] = res
+        
+        if i>=2:
+            break
+    return P
     
 if __name__ == '__main__':
     main()
