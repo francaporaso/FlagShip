@@ -72,6 +72,7 @@ def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
     P = np.zeros((nvoids, 4, N)) # 4=num de arr q devuelve density_v2
     for i,Li in enumerate(tqdm(L)):
         num = len(Li)
+        print(num)
         entrada = np.array([Li.T[1], Li.T[5], Li.T[6], Li.T[7]]).T
         with Pool(processes=num) as pool:
             resmap = pool.map(partial_func,
@@ -80,9 +81,7 @@ def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
             pool.join()
         for j,res in enumerate(resmap):
             P[i*num + j] = res
-        
-        if i>=2:
-            break
+
     return P
     
 if __name__ == '__main__':
