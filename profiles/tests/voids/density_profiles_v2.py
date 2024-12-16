@@ -99,11 +99,6 @@ def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
     for i,Li in enumerate(tqdm(L)):
         
         num = len(Li)
-<<<<<<< HEAD
-        print(num)
-        entrada = np.array([Li.T[1], Li.T[5], Li.T[6], Li.T[7]]).T
-        
-=======
         entrada = np.array([np.full(num,N),
                             np.full(num,m),
                             Li.T[1], #rv
@@ -111,7 +106,6 @@ def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
                             Li.T[6], #yv
                             Li.T[7], #zv
                            ]).T
->>>>>>> cd8b6fcb3ca1ac1524872ff6a65323e90589f795
         with Pool(processes=num) as pool:
             resmap = pool.map(partial_func_unpack, entrada)
             pool.close()
