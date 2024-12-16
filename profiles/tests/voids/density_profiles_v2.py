@@ -88,9 +88,9 @@ def save_file(filename, lens_args, nvoids, N, m, P):
     
 def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
          ncores=32, N=10, m=5):
-
+    lensname="/mnt/simulations/MICE/voids_MICE.dat"
     L,_,nvoids = lenscat_load(*lens_args, 
-                              flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
+                              flag=2.0, lensname=lensname,
                               split=True, NSPLITS=ncores)
     
     print('# of voids: ',nvoids)
@@ -122,8 +122,40 @@ def main(lens_args=(6.0,9.0,0.2,0.3,-1.0,-0.8,0.0,100),
     
     filename = f'{lensname.split("/")[-1][:-4]}_Rv{int(lens_args[0])}-{int(lens_args[1])}_z0{int(10*lens_args[2])}-0{int(10*lens_args[3])}_type-{t}.fits'
     print('Saving in '+filename)
-    savefile(filename, lens_args, nvoids, N, m, P)
+    save_file(filename, lens_args, nvoids, N, m, P)
     print('End! :)')
     
 if __name__ == '__main__':
-    main(lens_args=(6.0,9.622,0.2,0.4,-1.0,-0.8,-1.0,100.0),ncores=32,N=50,m=5)
+    from time import time
+
+    tin = time()
+    N,m = 50,5
+    ncores = 32
+    
+    void_args = np.array([(6.0, 9.622, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0),
+                          (6.0, 9.622, 0.2, 0.4, -1.0, -0.8,  0.0, 100.0),
+                          (6.0, 9.622, 0.2, 0.4, -1.0, -0.8, -1.0, 0.0),
+                          (9.622, 50.0, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0),
+                          (9.622, 50.0, 0.2, 0.4, -1.0, -0.8,  0.0, 100.0),
+                          (9.622, 50.0, 0.2, 0.4, -1.0, -0.8, -1.0, 0.0),
+                          ])
+    
+    for lensarg in void_args:    
+        if lensarg[7]<=0:
+            t = 'R'
+        elif lensarg[6]>=0:
+            t = 'S'
+        else:
+            t = 'all'
+
+        print('='*25)
+        print('Rv'.ljust(10,'.'),lensarg[0],'-',lensarg[1])
+        print('z'.ljust(10,'.'),lensarg[2],'-',lensarg[3])
+        print('Type'.ljust(10,'.'),t)
+        print('-'*20)
+        print('ncores'.ljust(10,'.'),ncores)
+        print('Npoints'.ljust(10,'.'),N)
+        print('RMAX'.ljust(10,'.'),m)
+        main(lens_args=lensarg,ncores=ncores,N=N,m=m)
+    
+    print('Total time:', (time()-tin)/60, 'min')
