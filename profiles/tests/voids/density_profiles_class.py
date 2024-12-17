@@ -1,0 +1,149 @@
+from astropy.cosmology import LambdaCDM
+from astropy.io import fits
+from functools import partial
+import matplotlib.pyplot as plt
+from multiprocessing import Pool
+import numpy as np
+import sys
+from tqdm import tqdm
+sys.path.append('/home/fcaporaso/FlagShip/profiles/')
+sys.path.append('/home/fcaporaso/FlagShip/vgcf/')
+from vgcf import ang2xyz
+
+class Void:
+
+    def __init__(self):
+        self.cosmo : LambdaCDM = LambdaCDM(H0=100.0, Om0=0.25, Ode0=0.75)
+
+        self.lensname  : str        = '/mnt/simulations/MICE/voids_MICE.dat'
+        self.lens_args : dict       = {'Rv_min':6.0,'Rv_max':9.0,'z_min':0.2,'z_max':0.4,'rho1_min':-1.0,'rho1_max':-0.8,'rho2_min':-1.0,'rho2_max':100.0}
+        self.voidcat   : np.ndarray = None
+        self.nvoids    : int        = 0
+        self.split     : bool       = True
+        self.Kmask     : np.ndarray = None
+
+        self.catname    : str        = '/home/fcaporaso/cats/MICE/mice_sats_18939.fits'
+        self.xh         : np.ndarray = None
+        self.yh         : np.ndarray = None
+        self.zh         : np.ndarray = None
+        self.lmhalo     : np.ndarray = None
+        self.ngx        : int        = 0
+        self.if_centrals: bool       = True
+
+    def load_voidcat(self):
+        '''
+        loads void catalog splited for multiprocessing (or full cat)
+        '''
+        ## 0:id, 1:Rv, 2:ra, 3:dec, 4:z, 5:xv, 6:yv, 7:zv, 8:rho1, 9:rho2, 10:logp, 11:flag
+        L = np.loadtxt(self.lensname).T
+
+        nk = 100 ## para cambiarlo hay que repensar el calculo de (dra,ddec) y el doble for loop
+        NNN = len(L[0]) ##total number of voids
+        ra,dec = L[2],L[3]
+        K    = np.zeros((nk+1,NNN))
+        K[0] = np.ones(NNN).astype(bool)
+
+        ramin  = np.min(ra)
+        cdec   = np.sin(np.deg2rad(dec))
+        decmin = np.min(cdec)
+        dra    = ((np.max(ra)+1.e-5) - ramin)/10.
+        ddec   = ((np.max(cdec)+1.e-5) - decmin)/10.
+
+        c = 1
+        for a in range(10): 
+            for d in range(10): 
+                mra  = (ra  >= ramin + a*dra)&(ra < ramin + (a+1)*dra) 
+                mdec = (cdec >= decmin + d*ddec)&(cdec < decmin + (d+1)*ddec) 
+                K[c] = ~(mra&mdec)
+                c += 1
+
+        mask = (L[1] >= self.lens_args['Rv_min']) & (L[1] < self.lens_args['Rv_max']) & (
+            L[4] >= self.lens_args['z_min']) & (L[4] < self.lens_args['z_max']) & (
+            L[8] >= self.lens_args['rho1_min']) & (L[8] < self.lens_args['rho1_max']) & (
+            L[9] >= self.lens_args['rho2_min']) & (L[9] < self.lens_args['rho2_max']) & (
+            L[11] >= 2.0)
+
+        nvoids = mask.sum()
+        L = L[:,mask]
+
+        if self.split:
+            if NSPLITS > nvoids:
+                NSPLITS = nvoids
+            lbins = int(round(nvoids/float(NSPLITS), 0))
+            slices = ((np.arange(lbins)+1)*NSPLITS).astype(int)
+            slices = slices[(slices < nvoids)]
+            L = np.split(L.T, slices)
+            K = np.split(K.T, slices)
+
+        self.voidcat = L
+        self.nvoids = nvoids
+        self.Kmask =  K
+
+    def load_gxcat(self):
+
+        if self.if_centrals:    
+            with fits.open(self.catname) as f:
+                centrals = f[1].data.flag_central == 0
+                ra_gal  = f[1].data.ra_gal[centrals]
+                dec_gal = f[1].data.dec_gal[centrals]
+                z_gal   = f[1].data.z_cgal[centrals]
+                lmhalo  = f[1].data.lmhalo[centrals]
+            
+            self.xh, self.yh, self.zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=self.cosmo)
+            self.lmhalo = lmhalo
+            self.ngx = len(self.xh)
+
+        else:
+            with fits.open(self.catname) as f:
+                ra_gal  = f[1].data.ra_gal
+                dec_gal = f[1].data.dec_gal
+                z_gal   = f[1].data.z_cgal
+            
+            self.xh, self.yh, self.zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=self.cosmo)
+            self.ngx = len(self.xh)
+
+    def partial_density(self, N, m, rv, xv, yv, zv):
+        N = int(N)
+        m = int(m)
+
+        number_gx = np.zeros(N)
+        mass_bin = np.zeros(N)
+        vol = np.zeros(N)
+        
+        dist = np.sqrt((self.xh-xv)**2 + (self.yh-yv)**2 + (self.zh-zv)**2) ## dist to center of void i
+        const = m*rv/N
+
+        for k in range(N):
+            mask = (dist < (k+1)*const) & (dist >= k*const)
+            number_gx[k] = mask.sum()
+            mass_bin[k] = np.sum( 10.0**(self.lmhalo[mask]) )
+            vol[k] = (k+1)**3 - k**3
+            
+        mask_mean = (dist < 5*m*const)
+        mass_ball = np.sum( 10.0**(self.lmhalo[mask_mean]) )
+        mean_den_ball = mass_ball/((4/3)*np.pi*(5*m*const)**3)
+        
+        vol *= (4/3)*np.pi*const**3
+        
+        return number_gx, mass_bin, vol, np.full_like(vol, mean_den_ball)
+    
+    def stacking(self, N, m):
+        P = np.zeros((self.nvoids, 4, N)) # 4=num de arr q devuelve density_v2
+    
+        for i,Li in enumerate(tqdm(self.voidcat)):
+            
+            num = len(Li)
+            entrada = np.array([np.full(num,N),
+                                np.full(num,m),
+                                Li.T[1], #rv
+                                Li.T[5], #xv
+                                Li.T[6], #yv
+                                Li.T[7], #zv
+                            ]).T
+            with Pool(processes=num) as pool:
+                resmap = pool.map(self.partial_density, entrada)
+                pool.close()
+                pool.join()
+
+            P[i*num:(i+1)*num] = resmap
+    
