@@ -27,13 +27,22 @@ def tracercat_load(catname='mice_sats_18939.fits', if_centrals=True):
     return ra_gal, dec_gal, z_gal
 
 def density_v2(xh, yh, zh, lmhalo, N, m, rv, xv, yv, zv):
+
     N = int(N)
     m = int(m)
+
     number_gx = np.zeros(N)
     mass_bin = np.zeros(N)
     vol = np.zeros(N)
+
     dist = np.sqrt((xh-xv)**2 + (yh-yv)**2 + (zh-zv)**2) ## dist to center of void i
     const = m*rv/N
+
+    mask_mean = (dist < 5*m*rv)
+    mass_ball = np.sum( 10.0**(lmhalo[mask_mean]) )
+    mean_den_ball = mass_ball/((4/3)*np.pi*(5*m*rv)**3)
+
+    dist = dist[mask_mean]
 
     for k in range(N):
         mask = (dist < (k+1)*const) & (dist >= k*const)
@@ -41,10 +50,6 @@ def density_v2(xh, yh, zh, lmhalo, N, m, rv, xv, yv, zv):
         mass_bin[k] = np.sum( 10.0**(lmhalo[mask]) )
         vol[k] = (k+1)**3 - k**3
         
-    mask_mean = (dist < 5*m*const)
-    mass_ball = np.sum( 10.0**(lmhalo[mask_mean]) )
-    mean_den_ball = mass_ball/((4/3)*np.pi*(5*m*const)**3)
-    
     vol *= (4/3)*np.pi*const**3
     
     return number_gx, mass_bin, vol, np.full_like(vol, mean_den_ball)
@@ -130,15 +135,16 @@ if __name__ == '__main__':
 
     tin = time()
     N,m = 50,5
-    ncores = 50
+    ncores = 32
     
-    void_args = np.array([(6.0, 9.622, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0),
-                          (6.0, 9.622, 0.2, 0.4, -1.0, -0.8,  0.0, 100.0),
-                          (6.0, 9.622, 0.2, 0.4, -1.0, -0.8, -1.0, 0.0),
-                          (9.622, 50.0, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0),
-                          (9.622, 50.0, 0.2, 0.4, -1.0, -0.8,  0.0, 100.0),
-                          (9.622, 50.0, 0.2, 0.4, -1.0, -0.8, -1.0, 0.0),
-                          ])
+    void_args = np.array([
+        # (6.0, 9.622, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0),
+        # (6.0, 9.622, 0.2, 0.4, -1.0, -0.8,  0.0, 100.0),
+        # (6.0, 9.622, 0.2, 0.4, -1.0, -0.8, -1.0, 0.0),
+        (9.622, 50.0, 0.2, 0.4, -1.0, -0.8, -1.0, 100.0),
+        # (9.622, 50.0, 0.2, 0.4, -1.0, -0.8,  0.0, 100.0),
+        # (9.622, 50.0, 0.2, 0.4, -1.0, -0.8, -1.0, 0.0),
+        ])
     
     for lensarg in void_args:    
         if lensarg[7]<=0:
