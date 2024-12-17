@@ -19,11 +19,13 @@ class Void:
                             'rho2_min':-1.0,'rho2_max':100.0},
                  catname='/home/fcaporaso/cats/MICE/mice_sats_18939.fits',
                  split=True, if_centrals=True,
-                 N=10, m=5):
+                 N=10, m=5, ncores=4):
+        
         self.cosmo : LambdaCDM = LambdaCDM(H0=100.0, Om0=0.25, Ode0=0.75)
 
-        self.N : int = N
-        self.m : int = m
+        self.N      : int = N
+        self.m      : int = m
+        self.ncores : int = ncores
         
         self.lensname  : str        = lensname
         self.lens_args : dict       = lens_args
@@ -122,7 +124,10 @@ class Void:
         
         dist = np.sqrt((self.xh-xv)**2 + (self.yh-yv)**2 + (self.zh-zv)**2) ## dist to center of void i
         const = self.m*rv/self.N
-
+        ##TODO
+        # intentar mover la mascara mask_mean arriba, redefinir dist = dist[mask_mean]
+        # y después hacer este for loop... 
+        # eso debería achicar el uso de memoria y acelerar un poco las cosas
         for k in range(self.N):
             mask = (dist < (k+1)*const) & (dist >= k*const)
             number_gx[k] = mask.sum()
@@ -131,7 +136,7 @@ class Void:
             
         mask_mean = (dist < 5*self.m*rv)
         mass_ball = np.sum( 10.0**(self.lmhalo[mask_mean]) )
-        mean_den_ball = mass_ball/((4/3)*np.pi*(5*m*const)**3)
+        mean_den_ball = mass_ball/((4/3)*np.pi*(5*self.m*rv)**3)
         
         vol *= (4/3)*np.pi*const**3
         
