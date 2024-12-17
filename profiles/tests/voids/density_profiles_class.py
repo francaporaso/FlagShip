@@ -6,31 +6,41 @@ from multiprocessing import Pool
 import numpy as np
 import sys
 from tqdm import tqdm
-sys.path.append('/home/fcaporaso/FlagShip/profiles/')
+#sys.path.append('/home/fcaporaso/FlagShip/profiles/')
 sys.path.append('/home/fcaporaso/FlagShip/vgcf/')
 from vgcf import ang2xyz
 
 class Void:
 
-    def __init__(self):
+    def __init__(self, lensname='/mnt/simulations/MICE/voids_MICE.dat',
+                 lens_args={'Rv_min':6.0,'Rv_max':9.0,
+                            'z_min':0.2,'z_max':0.4,
+                            'rho1_min':-1.0,'rho1_max':-0.8,
+                            'rho2_min':-1.0,'rho2_max':100.0},
+                 catname='/home/fcaporaso/cats/MICE/mice_sats_18939.fits',
+                 split=True, if_centrals=True,
+                 N=10, m=5):
         self.cosmo : LambdaCDM = LambdaCDM(H0=100.0, Om0=0.25, Ode0=0.75)
 
-        self.lensname  : str        = '/mnt/simulations/MICE/voids_MICE.dat'
-        self.lens_args : dict       = {'Rv_min':6.0,'Rv_max':9.0,'z_min':0.2,'z_max':0.4,'rho1_min':-1.0,'rho1_max':-0.8,'rho2_min':-1.0,'rho2_max':100.0}
+        self.N : int = N
+        self.m : int = m
+        
+        self.lensname  : str        = lensname
+        self.lens_args : dict       = lens_args
         self.voidcat   : np.ndarray = None
         self.nvoids    : int        = 0
-        self.split     : bool       = True
+        self.split     : bool       = split
         self.Kmask     : np.ndarray = None
 
-        self.catname    : str        = '/home/fcaporaso/cats/MICE/mice_sats_18939.fits'
+        self.catname    : str        = catname
         self.xh         : np.ndarray = None
         self.yh         : np.ndarray = None
         self.zh         : np.ndarray = None
         self.lmhalo     : np.ndarray = None
         self.ngx        : int        = 0
-        self.if_centrals: bool       = True
+        self.if_centrals: bool       = if_centrals
 
-    def load_voidcat(self):
+    def load_voidcat(self, NSPLITS=1):
         '''
         loads void catalog splited for multiprocessing (or full cat)
         '''
@@ -102,24 +112,24 @@ class Void:
             self.xh, self.yh, self.zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=self.cosmo)
             self.ngx = len(self.xh)
 
-    def partial_density(self, N, m, rv, xv, yv, zv):
-        N = int(N)
-        m = int(m)
-
-        number_gx = np.zeros(N)
-        mass_bin = np.zeros(N)
-        vol = np.zeros(N)
+    def partial_density(self, params):
+        
+        rv, xv, yv, zv = params
+        
+        number_gx = np.zeros(self.N)
+        mass_bin = np.zeros(self.N)
+        vol = np.zeros(self.N)
         
         dist = np.sqrt((self.xh-xv)**2 + (self.yh-yv)**2 + (self.zh-zv)**2) ## dist to center of void i
-        const = m*rv/N
+        const = self.m*rv/self.N
 
-        for k in range(N):
+        for k in range(self.N):
             mask = (dist < (k+1)*const) & (dist >= k*const)
             number_gx[k] = mask.sum()
             mass_bin[k] = np.sum( 10.0**(self.lmhalo[mask]) )
             vol[k] = (k+1)**3 - k**3
             
-        mask_mean = (dist < 5*m*const)
+        mask_mean = (dist < 5*self.m*rv)
         mass_ball = np.sum( 10.0**(self.lmhalo[mask_mean]) )
         mean_den_ball = mass_ball/((4/3)*np.pi*(5*m*const)**3)
         
@@ -127,23 +137,22 @@ class Void:
         
         return number_gx, mass_bin, vol, np.full_like(vol, mean_den_ball)
     
-    def stacking(self, N, m):
-        P = np.zeros((self.nvoids, 4, N)) # 4=num de arr q devuelve density_v2
+    def stacking(self):
+        P = np.zeros((self.nvoids, 4, self.N)) # 4=num de arr q devuelve density_v2
     
         for i,Li in enumerate(tqdm(self.voidcat)):
             
             num = len(Li)
-            entrada = np.array([np.full(num,N),
-                                np.full(num,m),
-                                Li.T[1], #rv
+            entrada = np.array([Li.T[1], #rv
                                 Li.T[5], #xv
                                 Li.T[6], #yv
                                 Li.T[7], #zv
-                            ]).T
+                               ]).T
             with Pool(processes=num) as pool:
                 resmap = pool.map(self.partial_density, entrada)
                 pool.close()
                 pool.join()
 
             P[i*num:(i+1)*num] = resmap
-    
+        
+        return P
