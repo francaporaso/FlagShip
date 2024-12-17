@@ -1,7 +1,7 @@
 from astropy.cosmology import LambdaCDM
 from astropy.io import fits
-from functools import partial
-import matplotlib.pyplot as plt
+# from functools import partial
+# import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import numpy as np
 import sys
@@ -29,22 +29,22 @@ class Void:
         
         self.lensname  : str        = lensname
         self.lens_args : dict       = lens_args
+        self.split     : bool       = split
         self.voidcat   : np.ndarray = None
         self.nvoids    : int        = 0
-        self.split     : bool       = split
         self.Kmask     : np.ndarray = None
 
         self.catname    : str        = catname
+        self.if_centrals: bool       = if_centrals
         self.xh         : np.ndarray = None
         self.yh         : np.ndarray = None
         self.zh         : np.ndarray = None
         self.lmhalo     : np.ndarray = None
         self.ngx        : int        = 0
-        self.if_centrals: bool       = if_centrals
 
-    def load_voidcat(self, NSPLITS=1):
+    def load_voidcat(self):
         '''
-        loads void catalog splited for multiprocessing (or full cat)
+        loads void catalog splited for multiprocessing
         '''
         ## 0:id, 1:Rv, 2:ra, 3:dec, 4:z, 5:xv, 6:yv, 7:zv, 8:rho1, 9:rho2, 10:logp, 11:flag
         L = np.loadtxt(self.lensname).T
@@ -79,10 +79,10 @@ class Void:
         L = L[:,mask]
 
         if self.split:
-            if NSPLITS > nvoids:
-                NSPLITS = nvoids
-            lbins = int(round(nvoids/float(NSPLITS), 0))
-            slices = ((np.arange(lbins)+1)*NSPLITS).astype(int)
+            if self.ncores > nvoids:
+                self.ncores = nvoids
+            lbins = int(round(nvoids/float(self.ncores), 0))
+            slices = ((np.arange(lbins)+1)*self.ncores).astype(int)
             slices = slices[(slices < nvoids)]
             L = np.split(L.T, slices)
             K = np.split(K.T, slices)
