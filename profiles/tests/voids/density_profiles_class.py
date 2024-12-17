@@ -124,20 +124,19 @@ class Void:
         
         dist = np.sqrt((self.xh-xv)**2 + (self.yh-yv)**2 + (self.zh-zv)**2) ## dist to center of void i
         const = self.m*rv/self.N
-        ##TODO
-        # intentar mover la mascara mask_mean arriba, redefinir dist = dist[mask_mean]
-        # y después hacer este for loop... 
-        # eso debería achicar el uso de memoria y acelerar un poco las cosas
+
+        mask_mean = (dist < 5*self.m*rv)
+        mass_ball = np.sum( 10.0**(self.lmhalo[mask_mean]) )
+        mean_den_ball = mass_ball/((4/3)*np.pi*(5*self.m*rv)**3)
+
+        dist = dist[mask_mean]
+
         for k in range(self.N):
             mask = (dist < (k+1)*const) & (dist >= k*const)
             number_gx[k] = mask.sum()
             mass_bin[k] = np.sum( 10.0**(self.lmhalo[mask]) )
             vol[k] = (k+1)**3 - k**3
             
-        mask_mean = (dist < 5*self.m*rv)
-        mass_ball = np.sum( 10.0**(self.lmhalo[mask_mean]) )
-        mean_den_ball = mass_ball/((4/3)*np.pi*(5*self.m*rv)**3)
-        
         vol *= (4/3)*np.pi*const**3
         
         return number_gx, mass_bin, vol, np.full_like(vol, mean_den_ball)
