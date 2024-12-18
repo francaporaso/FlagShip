@@ -126,15 +126,16 @@ class Void:
         const = self.m*rv/self.N
 
         mask_mean = (dist < 5*self.m*rv)
-        mass_ball = np.sum( 10.0**(self.lmhalo[mask_mean]) )
-        mean_den_ball = mass_ball/((4/3)*np.pi*(5*self.m*rv)**3)
-
         dist = dist[mask_mean]
+        lmhalo = self.lmhalo[mask_mean]
+        
+        mass_ball = np.sum( 10.0**(lmhalo) )
+        mean_den_ball = mass_ball/((4/3)*np.pi*(5*self.m*rv)**3)
 
         for k in range(self.N):
             mask = (dist < (k+1)*const) & (dist >= k*const)
             number_gx[k] = mask.sum()
-            mass_bin[k] = np.sum( 10.0**(self.lmhalo[mask]) )
+            mass_bin[k] = np.sum( 10.0**(lmhalo[mask]) )
             vol[k] = (k+1)**3 - k**3
             
         vol *= (4/3)*np.pi*const**3
