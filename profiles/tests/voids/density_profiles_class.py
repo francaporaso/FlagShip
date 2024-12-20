@@ -10,6 +10,21 @@ from tqdm import tqdm
 sys.path.append('/home/fcaporaso/FlagShip/vgcf/')
 from vgcf import ang2xyz
 
+def cov_matrix(array):
+        
+    K = len(array)
+    Kmean = np.average(array,axis=0)
+    bins = array.shape[1]
+    
+    COV = np.zeros((bins,bins))
+    
+    for k in range(K):
+        dif = (array[k]- Kmean)
+        COV += np.outer(dif,dif)        
+    
+    COV *= (K-1)/K
+    return COV
+
 class Void:
 
     def __init__(self, lensname='/mnt/simulations/MICE/voids_MICE.dat',
@@ -32,7 +47,7 @@ class Void:
         self.split     : bool       = split
         self.voidcat   : np.ndarray = None
         self.nvoids    : int        = 0
-        self.Kmask     : np.ndarray = None
+        self.K         : np.ndarray = None
 
         self.catname    : str        = catname
         self.if_centrals: bool       = if_centrals
@@ -89,7 +104,7 @@ class Void:
 
         self.voidcat = L
         self.nvoids = nvoids
-        self.Kmask =  K
+        self.K =  K
 
     def load_gxcat(self):
 
@@ -127,15 +142,15 @@ class Void:
 
         mask_mean = (dist < 5*self.m*rv)
         dist = dist[mask_mean]
-        lmhalo = self.lmhalo[mask_mean]
+        logm = self.lmhalo[mask_mean]
         
-        mass_ball = np.sum( 10.0**(lmhalo) )
+        mass_ball = np.sum( 10.0**(logm) )
         mean_den_ball = mass_ball/((4/3)*np.pi*(5*self.m*rv)**3)
 
         for k in range(self.N):
             mask = (dist < (k+1)*const) & (dist >= k*const)
             number_gx[k] = mask.sum()
-            mass_bin[k] = np.sum( 10.0**(lmhalo[mask]) )
+            mass_bin[k] = np.sum( 10.0**(logm[mask]) )
             vol[k] = (k+1)**3 - k**3
             
         vol *= (4/3)*np.pi*const**3
@@ -143,8 +158,14 @@ class Void:
         return number_gx, mass_bin, vol, np.full_like(vol, mean_den_ball)
     
     def stacking(self):
-        P = np.zeros((self.nvoids, 4, self.N)) # 4=num de arr q devuelve density_v2
-    
+        # P = np.zeros((self.nvoids, 4, self.N)) # 4=num de arr q devuelve density_v2
+        nk = 100
+        
+        number_gx = np.zeros((nk+1,self.N))
+        mass  = np.zeros((nk+1,self.N))
+        vol   = np.zeros((nk+1,self.N))
+        mean_den_ball = np.zeros((nk+1,self.N))
+
         for i,Li in enumerate(tqdm(self.voidcat)):
             
             num = len(Li)
@@ -158,6 +179,24 @@ class Void:
                 pool.close()
                 pool.join()
 
-            P[i*num:(i+1)*num] = resmap
+            j=0
+            for res in resmap:
+                km = np.tile(self.K[i][j], (self.N,1)).T
+                number_gx += np.tile(res[0], (nk+1,1))*km
+                mass  += np.tile(res[1], (nk+1,1))*km
+                vol   += np.tile(res[2], (nk+1,1))*km
+                mean_den_ball += np.tile(res[3], (nk+1,1))*km
+                
+                j+=1
+            # P[i*num:(i+1)*num] = resmap
+        # return P
+        return number_gx, mass, vol, mean_den_ball
+    
+    def run(self):
         
-        return P
+        self.load_voidcat()
+        self.load_gxcat()
+
+        number_gx, mass, vol, mean_den_ball = self.stacking()
+
+        
