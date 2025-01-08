@@ -161,3 +161,5 @@ class Void:
             P[i*num:(i+1)*num] = resmap
         
         return P
+    
+    def 
