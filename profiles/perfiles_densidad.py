@@ -30,7 +30,7 @@ tin = time.time()
 
 
 ## ------ PARAMS
-N = 25 ## Num de puntos del perfil
+N = 22 ## Num de puntos del perfil
 m = 5 ## dist maxima en R_v del perfil
 
 
@@ -248,19 +248,19 @@ def stacking(N, m,
     print(f"nvoids: {nvoids}")
 
     # COVARIANZA JACKKNIFE
-    # numbergx = np.zeros((nk+1,N))
-    # massbin = np.zeros((nk+1,N))
-    # mu = np.zeros((nk+1,N)) ## vol * denball_5
-    # mu_gx = np.zeros((nk+1,N)) ## vol * ngal_ball_5
+    numbergx = np.zeros((nk+1,N))
+    massbin = np.zeros((nk+1,N))
+    mu = np.zeros((nk+1,N)) ## vol * denball_5
+    mu_gx = np.zeros((nk+1,N)) ## vol * ngal_ball_5
     
     # POISSON
-    numbergx = np.zeros((nvoids,N))
-    mu_gx = np.zeros((nvoids,N)) ## vol * meangxcomsh
+    # numbergx = np.zeros((nvoids,N))
+    # mu_gx = np.zeros((nvoids,N)) ## vol * meangxcomsh
 
-    massbin = np.zeros((nvoids,N))
-    mu = np.zeros((nvoids,N)) ## vol * meandencomsh
+    # massbin = np.zeros((nvoids,N))
+    # mu = np.zeros((nvoids,N)) ## vol * meandencomsh
 
-    count = 0
+    # count = 0
     for i,Li in enumerate(tqdm(L)):
         num=len(Li)
         entrada = np.array([Li.T[1], Li.T[5], Li.T[6], Li.T[7]]).T
@@ -272,48 +272,48 @@ def stacking(N, m,
         
         for j, res in enumerate(resmap):
             #COVARIANZA JACKKNIFE
-            #km = np.tile(K[i][j], (N,1)).T
-            #numbergx += np.tile(res[0], (nk+1,1))*km
-            #massbin += np.tile(res[1], (nk+1,1))*km
-            #mu += np.tile(res[2]*res[4], (nk+1,1))*km
-            #mu_gx += np.tile(res[2]*res[3], (nk+1,1))*km
+            km = np.tile(K[i][j], (N,1)).T
+            numbergx += np.tile(res[0], (nk+1,1))*km
+            massbin += np.tile(res[1], (nk+1,1))*km
+            mu += np.tile(res[2]*res[4], (nk+1,1))*km
+            mu_gx += np.tile(res[2]*res[3], (nk+1,1))*km
 
             #POISSON
-            numbergx[count] = res[0]
-            massbin[count] = res[1]
-            mu[count] = res[2]*res[4]
-            mu_gx[count] = res[2]*res[3]
-            count+=1
+            # numbergx[count] = res[0]
+            # massbin[count] = res[1]
+            # mu[count] = res[2]*res[4]
+            # mu_gx[count] = res[2]*res[3]
+            # count+=1
     
     # COVARIANZA JACKKNIFE
-    # delta = massbin/mu - 1
-    # deltagx = numbergx/mu_gx - 1
-    # cov_delta = cov_matrix(delta[1:,:])
-    # cov_deltagx = cov_matrix(deltagx[1:,:])
-    # saveresults(lensargs, nvoids, sample, delta[0], deltagx[0], cov_delta, cov_deltagx)
+    delta = massbin/mu - 1
+    deltagx = numbergx/mu_gx - 1
+    cov_delta = cov_matrix(delta[1:,:])
+    cov_deltagx = cov_matrix(deltagx[1:,:])
+    saveresults(lensargs, nvoids, sample, delta[0], deltagx[0], cov_delta, cov_deltagx)
     
     # POISSON
-    Ngx = np.sum(numbergx,axis=0)
-    Msum = np.sum(massbin,axis=0)
-    e_M = np.std(massbin,axis=0)
-    mu_sum = np.sum(mu,axis=0)
-    e_mu = np.std(mu,axis=0)
+    # Ngx = np.sum(numbergx,axis=0)
+    # Msum = np.sum(massbin,axis=0)
+    # e_M = np.std(massbin,axis=0)
+    # mu_sum = np.sum(mu,axis=0)
+    # e_mu = np.std(mu,axis=0)
+    # 
+    # delta = Msum/mu_sum - 1
+    # deltagx = Ngx/np.sum(mu_gx,axis=0) - 1
+    # e_delta = np.sqrt( e_M**2 + (Msum*e_mu/mu_sum)**2 )/mu_sum
     
-    delta = Msum/mu_sum - 1
-    deltagx = Ngx/np.sum(mu_gx,axis=0) - 1
-    e_delta = np.sqrt( e_M**2 + (Msum*e_mu/mu_sum)**2 )/mu_sum
-    
-    if lensargs[7]<=0:
-        t = 'R'
-    elif lensargs[6]>=0:
-        t = 'S'
-    else:
-        t = 'all'
-    
-    np.savetxt(f'density_mice_mdcs_Rv{int(lensargs[0])}-{int(lensargs[1])}_{t}_z0{int(10*lensargs[2])}-0{int(10*lensargs[3])}_{sample}.csv', 
-            np.column_stack([delta, deltagx, e_delta]), 
-            delimiter=','
-    )
+    # if lensargs[7]<=0:
+    #     t = 'R'
+    # elif lensargs[6]>=0:
+    #     t = 'S'
+    # else:
+    #     t = 'all'
+    # 
+    # np.savetxt(f'density_mice_mdcs_Rv{int(lensargs[0])}-{int(lensargs[1])}_{t}_z0{int(10*lensargs[2])}-0{int(10*lensargs[3])}_{sample}.csv', 
+    #         np.column_stack([delta, deltagx, e_delta]), 
+    #         delimiter=','
+    # )
 
 
 ### -------- RUN
