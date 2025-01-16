@@ -309,11 +309,10 @@ def stacking(N, m,
     else:
         t = 'all'
     
-    np.savetxt(f'density_mice_mdcs_Rv{int(lensargs[0])}-{int(lensargs[1])}_{t}_z0{int(10*lensargs[2])}-0{int(10*lensargs[3])}_{sample}.fits')
-    
-
-
-# In[16]:
+    np.savetxt(f'density_mice_mdcs_Rv{int(lensargs[0])}-{int(lensargs[1])}_{t}_z0{int(10*lensargs[2])}-0{int(10*lensargs[3])}_{sample}.fits', 
+            np.column_stack([delta, deltagx, e_delta]), 
+            delimiter=','
+    )
 
 
 ### -------- RUN
