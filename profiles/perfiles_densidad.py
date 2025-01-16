@@ -233,7 +233,8 @@ def saveresults(args,nvoids,sample,
     else:
         t = 'all'
     
-    hdul.writeto(f'density_mice_mdcs_Rv{int(args[0])}-{int(args[1])}_{t}_z0{int(10*args[2])}-0{int(10*args[3])}_{sample}.fits')
+    hdul.writeto(f'density_mice_mdcs_Rv{int(args[0])}-{int(args[1])}_{t}_z0{int(10*args[2])}-0{int(10*args[3])}_{sample}.fits',
+                 overwrite=True)
 
 
 # In[11]:
