@@ -295,12 +295,13 @@ def stacking(N, m,
     # POISSON
     Ngx = np.sum(numbergx,axis=0)
     Msum = np.sum(massbin,axis=0)
+    e_M = np.std(massbin,axis=0)
     mu_sum = np.sum(mu,axis=0)
     e_mu = np.std(mu,axis=0)
     
     delta = Msum/mu_sum - 1
     deltagx = Ngx/np.sum(mu_gx,axis=0) - 1
-    e_delta = np.sqrt( Ngx + (Msum*e_mu/mu_sum)**2 )/mu_sum
+    e_delta = np.sqrt( e_M**2 + (Msum*e_mu/mu_sum)**2 )/mu_sum
     
     if lensargs[7]<=0:
         t = 'R'
@@ -309,14 +310,14 @@ def stacking(N, m,
     else:
         t = 'all'
     
-    np.savetxt(f'density_mice_mdcs_Rv{int(lensargs[0])}-{int(lensargs[1])}_{t}_z0{int(10*lensargs[2])}-0{int(10*lensargs[3])}_{sample}.fits', 
+    np.savetxt(f'density_mice_mdcs_Rv{int(lensargs[0])}-{int(lensargs[1])}_{t}_z0{int(10*lensargs[2])}-0{int(10*lensargs[3])}_{sample}.csv', 
             np.column_stack([delta, deltagx, e_delta]), 
             delimiter=','
     )
 
 
 ### -------- RUN
-ncores = 128
+ncores = 64
 args_list = [
     (6.0,9.622,0.2,0.4,-1.0,-0.8,-1.0,100.0),
     (6.0,9.622,0.2,0.4,-1.0,-0.8,0.0,100.0),
