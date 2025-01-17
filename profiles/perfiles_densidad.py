@@ -327,7 +327,7 @@ args_list = [
     (9.622,50.0,0.2,0.4,-1.0,-0.8,0.0,100.0),
     (9.622,50.0,0.2,0.4,-1.0,-0.8,-1.0,0.0),
 ]
-sample = 'N25'
+sample = 'N22'
 for lensargs in args_list:
 
     stacking(
