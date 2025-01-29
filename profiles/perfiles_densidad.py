@@ -1,12 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import numpy as np
 import matplotlib.pyplot as plt
-from pandas import DataFrame
 from astropy.cosmology import LambdaCDM
 from astropy.io import fits
 import sys
@@ -19,23 +12,13 @@ from multiprocessing import Pool
 from functools import partial
 import time
 
-# In[2]:
-
-
 cosmo = LambdaCDM(H0=100, Om0=0.25, Ode0=0.75)
 
 tin = time.time()
 
-# In[3]:
-
-
 ## ------ PARAMS
 N = 22 ## Num de puntos del perfil
 m = 5 ## dist maxima en R_v del perfil
-
-
-# In[4]:
-
 
 def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho2_max, 
                  flag=2.0, lensname="/mnt/simulations/MICE/voids_MICE.dat",
@@ -81,39 +64,30 @@ def lenscat_load(Rv_min, Rv_max, z_min, z_max, rho1_min, rho1_max, rho2_min, rho
 
     return L, K, nvoids
 
-
-# In[5]:
-
-
 def tracercat_load(catname='/home/fcaporaso/cats/MICE/mice_sats_18939.fits',
                    if_centrals=True, cosmo=cosmo):
     
-        if if_centrals:    
-            with fits.open(catname) as f:
-                centrals = f[1].data.flag_central == 0
-                z_gal   = f[1].data.z_cgal
-                mask_z  = (z_gal >= 0.1) & (z_gal <= 0.5)
-                mmm = centrals&mask_z
-                ra_gal  = f[1].data.ra_gal[mmm]
-                dec_gal = f[1].data.dec_gal[mmm]
-                z_gal   = z_gal[mmm]
-                lmhalo  = f[1].data.lmhalo[mmm]
-            
-            xh,yh,zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=cosmo)
-            return xh, yh, zh, lmhalo
-
-        else:
-            with fits.open(catname) as f:
-                ra_gal  = f[1].data.ra_gal
-                dec_gal = f[1].data.dec_gal
-                z_gal   = f[1].data.z_cgal
-            
-            xh,yh,zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=cosmo)
-            return xh, yh , zh
-
-
-# In[6]:
-
+    if if_centrals:    
+        with fits.open(catname) as f:
+            centrals = f[1].data.flag_central == 0
+            z_gal   = f[1].data.z_cgal
+            mask_z  = (z_gal >= 0.1) & (z_gal <= 0.5)
+            mmm = centrals&mask_z
+            ra_gal  = f[1].data.ra_gal[mmm]
+            dec_gal = f[1].data.dec_gal[mmm]
+            z_gal   = z_gal[mmm]
+            lmhalo  = f[1].data.lmhalo[mmm]
+        
+        xh,yh,zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=cosmo)
+        return xh, yh, zh, lmhalo
+    else:
+        with fits.open(catname) as f:
+            ra_gal  = f[1].data.ra_gal
+            dec_gal = f[1].data.dec_gal
+            z_gal   = f[1].data.z_cgal
+        
+        xh,yh,zh = ang2xyz(ra_gal, dec_gal, z_gal, cosmo=cosmo)
+        return xh, yh , zh
 
 def cov_matrix(array):
         
@@ -130,10 +104,6 @@ def cov_matrix(array):
     COV *= (K-1)/K
     return COV
 
-
-# In[7]:
-
-
 def mean_density_comovingshell(xh, yh, zh, logmh,
                                m, rv, xv, yv, zv):
 
@@ -148,10 +118,6 @@ def mean_density_comovingshell(xh, yh, zh, logmh,
     mass = np.sum(10.0 ** lmh)
 
     return mass/vol, len(lmh)/vol
-
-
-# In[8]:
-
 
 def number_density_v2(N, m, xh, yh, zh, lmhalo, rv, xv, yv, zv):
     number_gx = np.zeros(N)
@@ -182,17 +148,9 @@ def number_density_v2(N, m, xh, yh, zh, lmhalo, rv, xv, yv, zv):
     
     return number_gx, mass_bin, vol, np.full_like(vol, mean_gx_com), np.full_like(vol, mean_den_com)
 
-
-# In[9]:
-
-
 partial_func = partial(number_density_v2, N, m, *tracercat_load())
 def partial_func_unpack(A):
     return partial_func(*A)
-
-
-# In[10]:
-
 
 def saveresults(args,nvoids,sample,
                *results):
@@ -235,10 +193,6 @@ def saveresults(args,nvoids,sample,
     
     hdul.writeto(f'density_mice_mdcs_Rv{int(args[0])}-{int(args[1])}_{t}_z0{int(10*args[2])}-0{int(10*args[3])}_{sample}.fits',
                  overwrite=True)
-
-
-# In[11]:
-
 
 def stacking(N, m, 
              lensargs,
